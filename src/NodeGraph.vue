@@ -22,17 +22,21 @@
 <script>
 
 const testNodeGraph = require( './test_node_graph_01.json' )
+import { EventBus } from './EventBus.js'
 import NodeModule from './NodeModule.vue'
-
-let mousehold = false
-let prevMouse = { x: 0, y: 0 }
 
 export default {
 	name: 'app',
 	components: { NodeModule },
 	data() {
 		return {
-			nodes: testNodeGraph.nodes
+			nodes: testNodeGraph.nodes,
+			viewportData: {
+				zoomFactor: 1.0,
+				prevMouse: { x: 0, y: 0 },
+				mouseholdBG: false,
+				currentSelectedNode: null,
+			}
 		}
 	},
 	methods: {
@@ -43,25 +47,38 @@ export default {
 		},
 		zoom() {
 
+		},
+		nodeMouseDown( evt ) {
+			console.log( 42 )
+			console.log( evt )
 		}
 	},
 	mounted() {
+		EventBus.$on( 'vp-set-select-node', nodeCmp => {
+			this.viewportData.currentSelectedNode = nodeCmp
+		} )
 		$( this.$refs.nodeGraphContainerBG )
 			.on( 'mousedown', ( evt ) => {
-				console.log( 'd' )
-				mousehold = true
-				prevMouse = { x: evt.clientX, y: evt.clientY }
+				this.viewportData.mouseholdBG = true
 			} )
 		$( this.$refs.nodeGraphRoot )
-			.on( 'mouseup', () => {
-				console.log( 'u' )
-				mousehold = false
+			.on( 'mousedown', ( evt ) => {
+				this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
+			} )
+		$( this.$refs.nodeGraphRoot )
+			.on( 'mouseup', ( evt ) => {
+				this.viewportData.mouseholdBG = false
+				this.viewportData.currentSelectedNode = null
 			} )
 		$( this.$refs.nodeGraphContainer )
 			.on( 'mousemove', ( evt ) => {
-				if ( mousehold ) {
-					this.pan( { x: evt.clientX - prevMouse.x, y: evt.clientY - prevMouse.y } )
-					prevMouse = { x: evt.clientX, y: evt.clientY }
+				let [ dx, dy ] = [ evt.clientX - this.viewportData.prevMouse.x, evt.clientY - this.viewportData.prevMouse.y ]
+				if ( this.viewportData.mouseholdBG ) {
+					this.pan( { x: dx, y: dy } )
+					this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
+				}
+				if ( this.viewportData.currentSelectedNode ) {
+					this.viewportData.currentSelectedNode.moveByUnit( dx, dy )
 				}
 			} )
 	}
@@ -78,7 +95,6 @@ export default {
 		position: absolute
 		height: 100%
 		width: 100%
-		// left: 20%
 	.nodeGraphContainer
 		overflow: visible
 		pointer-events: none

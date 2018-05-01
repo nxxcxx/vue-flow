@@ -1,5 +1,5 @@
 <template>
-	<div ref="modeModule" class="nodeModule" :style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }">
+	<div ref="nodeModule" class="nodeModule" :style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }">
 		<div class="header">
 			{{ node.name }}
 		</div>
@@ -18,7 +18,10 @@
 </template>
 
 <script>
+import { EventBus } from './EventBus.js'
 import NodeModuleIO from './NodeModuleIO.vue'
+
+let prevPos = { left: 0, top: 0 }
 
 export default {
 	name: 'NodeModule',
@@ -26,9 +29,20 @@ export default {
 	props: [ 'node' ],
 	methods: {
 		setPosition( x, y ) {
-		}
+			this.node.position = { x, y }
+		},
+		moveByUnit( dx, dy ) {
+			let zf = this.$parent.viewportData.zoomFactor
+			, [ x, y ] = [ ( prevPos.left + dx ) / zf, ( prevPos.top + dy ) / zf ].map( v => +v.toFixed( 2 ) )
+			this.setPosition( x, y )
+		},
 	},
 	mounted() {
+		$( this.$refs.nodeModule )
+			.on( 'mousedown', ( evt ) => {
+				prevPos = $( this.$refs.nodeModule ).position()
+				EventBus.$emit( 'vp-set-select-node', evt.currentTarget.__vue__ )
+			} )
 	}
 }
 </script>
@@ -51,13 +65,10 @@ export default {
 	.inputColumn
 		padding: 0px
 		display: inline-block
-		background: red
 	.separator
 		width: 16px
 		display: inline-block
-		background: green
 	.outputColumn
 		padding: 0px
 		display: inline-block
-		background: blue
 </style>
