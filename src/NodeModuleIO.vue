@@ -1,6 +1,6 @@
 <template>
 	<div class="ioRow" :class="{ inputRow: isInput(), outputRow: isOutput() }">
-		<div class="ioPort deselected"
+		<div ref="ioPort" class="ioPort deselected"
 			:class="{ inputPort: isInput(), outputPort: isOutput() }"
 		>
 		</div>
@@ -16,7 +16,22 @@ export default {
 	props: [ 'type', 'io' ],
 	methods: {
 		isInput() { return this.type === 'input' },
-		isOutput() { return this.type === 'output' }
+		isOutput() { return this.type === 'output' },
+		updatePosition() {
+			let port = $( this.$refs.ioPort )
+			, [ hw, hh ] = [ port.width() * 0.5, port.height() * 0.5 ]
+			, off = port.offset()
+			, vp = $( this.$parent.$parent.$refs.nodeGraphContainer )
+			, vpOff = $( this.$parent.$parent.$refs.nodeGraphContainer ).offset()
+			, mat = $( this.$parent.$parent.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() + hw - mat[ 4 ] ) / mat[ 0 ]
+			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() + hh - mat[ 5 ] ) / mat[ 0 ]
+		}
+	},
+	mounted() {
+		this.io.__vue__ = this
+		this.updatePosition()
+		this.$parent.$on( 'updatePosition', this.updatePosition )
 	}
 }
 </script>

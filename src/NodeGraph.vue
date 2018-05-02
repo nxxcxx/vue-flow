@@ -3,10 +3,13 @@
 
 		<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
-			<div ref="nodeGraphContainerBG" class="nodeGraphContainerBG"></div>
+			<div ref="nodeGraphBG" class="nodeGraphBG"></div>
 
 			<svg class="nodeContainerSvg">
-
+				<NodeConnection v-for="( conn, idx ) in connections" :key="idx"
+					:x1="conn[ 0 ].position.x" :y1="conn[ 0 ].position.y"
+					:x2="conn[ 1 ].position.x" :y2="conn[ 1 ].position.y"
+				></NodeConnection>
 			</svg>
 
 			<div class="nodeContainer">
@@ -21,17 +24,20 @@
 
 <script>
 
-const testNodeGraph = require( './test_node_graph_01.json' )
 import { EventBus } from './EventBus.js'
 import NodeModule from './NodeModule.vue'
+import NodeConnection from './NodeConnection.vue'
+import importGraphConfiguration from './import.svc.js'
 
 export default {
 	name: 'app',
-	components: { NodeModule },
+	components: { NodeModule, NodeConnection },
 	data() {
 		return {
-			nodes: testNodeGraph.nodes,
+			nodes: [],
+			connections: [],
 			viewportData: {
+				minZoom: 0.2,
 				zoomFactor: 1.0,
 				prevMouse: { x: 0, y: 0 },
 				mouseholdBG: false,
@@ -45,30 +51,54 @@ export default {
 			vp.scrollLeft( vp.scrollLeft() - delta.x )
 			vp.scrollTop( vp.scrollTop() - delta.y )
 		},
-		zoom() {
+		zoom( anchor, delta ) {
+			let nCont = $( this.$refs.nodeGraphContainer )
 
+			let mat = nCont.css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+			, dd = - Math.sign( delta ) * 0.1
+			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.viewportData.minZoom )
+			, sd = sf / mat[ 0 ]
+			, xx = sd * ( mat[ 4 ] - anchor.x ) + anchor.x
+			, yy = sd * ( mat[ 5 ] - anchor.y ) + anchor.y
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
+			this.viewportData.zoomFactor = sf
 		},
-		nodeMouseDown( evt ) {
-			console.log( 42 )
-			console.log( evt )
+		importGraph() {
+			let graph = importGraphConfiguration()
+			this.nodes = graph.nodes
+			this.connections = graph.connections
+			console.log( this.connections )
 		}
+	},
+	created() {
+		this.importGraph()
 	},
 	mounted() {
 		EventBus.$on( 'vp-set-select-node', nodeCmp => {
 			this.viewportData.currentSelectedNode = nodeCmp
 		} )
-		$( this.$refs.nodeGraphContainerBG )
+		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ( evt ) => {
 				this.viewportData.mouseholdBG = true
 			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'mousedown', ( evt ) => {
+				if ( evt.button === 1 ) evt.preventDefault()
 				this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
 			} )
-		$( this.$refs.nodeGraphRoot )
 			.on( 'mouseup', ( evt ) => {
 				this.viewportData.mouseholdBG = false
 				this.viewportData.currentSelectedNode = null
+			} )
+			.on( 'wheel', ( evt ) => {
+				evt.preventDefault()
+				let vp = $( this.$refs.nodeGraphRoot )
+				let off = vp.offset()
+				let anchor = {
+					x: evt.clientX - off.left + vp.scrollLeft(),
+					y: evt.clientY - off.top + vp.scrollTop()
+				}
+				this.zoom( anchor, evt.originalEvent.deltaY )
 			} )
 		$( this.$refs.nodeGraphContainer )
 			.on( 'mousemove', ( evt ) => {
@@ -112,7 +142,7 @@ export default {
 		background: rgba( 0, 0, 0, 0 )
 		overflow: visible
 		pointer-events: none
-	.nodeGraphContainerBG
+	.nodeGraphBG
 		background: yellow
 		width: 100%
 		height: 100%

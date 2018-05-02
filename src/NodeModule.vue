@@ -35,9 +35,11 @@ export default {
 			let zf = this.$parent.viewportData.zoomFactor
 			, [ x, y ] = [ ( prevPos.left + dx ) / zf, ( prevPos.top + dy ) / zf ].map( v => +v.toFixed( 2 ) )
 			this.setPosition( x, y )
+			this.$emit( 'updatePosition', this.node.uuid )
 		},
 	},
 	mounted() {
+		console.log( this.node )
 		$( this.$refs.nodeModule )
 			.on( 'mousedown', ( evt ) => {
 				prevPos = $( this.$refs.nodeModule ).position()
