@@ -9,6 +9,9 @@ function importGraphConfiguration() {
 		let nm = new nodeFactory.Node( node.name )
 		nm._fnstr = node._fnstr
 		nm.position = node.position
+		// off set to center
+		nm.position.x += 2000
+		nm.position.y += 2000
 		for ( let input of node.input ) {
 			let io = new nodeFactory.Input( input.name, nm )
 			io.uuid = input.uuid

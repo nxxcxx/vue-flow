@@ -1,9 +1,9 @@
 <template>
 	<div ref="nodeGraphRoot" id="nodeGraphRoot">
 
-		<div ref="nodeGraphContainer" class="nodeGraphContainer">
+		<div ref="nodeGraphBG" class="nodeGraphBG"></div>
 
-			<div ref="nodeGraphBG" class="nodeGraphBG"></div>
+		<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
 			<svg class="nodeContainerSvg">
 				<NodeConnection v-for="( conn, idx ) in connections" :key="idx"
@@ -65,19 +65,27 @@ export default {
 			let graph = importGraphConfiguration()
 			this.nodes = graph.nodes
 			this.connections = graph.connections
-			console.log( this.connections )
 		}
 	},
 	created() {
 		this.importGraph()
 	},
 	mounted() {
+		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 		EventBus.$on( 'vp-set-select-node', nodeCmp => {
 			this.viewportData.currentSelectedNode = nodeCmp
 		} )
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ( evt ) => {
 				this.viewportData.mouseholdBG = true
+				console.log( 'bg md' )
+			} )
+			.on( 'mousemove', ( evt ) => {
+				let [ dx, dy ] = [ evt.clientX - this.viewportData.prevMouse.x, evt.clientY - this.viewportData.prevMouse.y ]
+				if ( this.viewportData.mouseholdBG ) {
+					this.pan( { x: dx, y: dy } )
+					this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
+				}
 			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'mousedown', ( evt ) => {
@@ -87,6 +95,7 @@ export default {
 			.on( 'mouseup', ( evt ) => {
 				this.viewportData.mouseholdBG = false
 				this.viewportData.currentSelectedNode = null
+				console.log( 'root mu' )
 			} )
 			.on( 'wheel', ( evt ) => {
 				evt.preventDefault()
@@ -98,13 +107,9 @@ export default {
 				}
 				this.zoom( anchor, evt.originalEvent.deltaY )
 			} )
-		$( this.$refs.nodeGraphContainer )
+		$( this.$refs.nodeGraphRoot )
 			.on( 'mousemove', ( evt ) => {
 				let [ dx, dy ] = [ evt.clientX - this.viewportData.prevMouse.x, evt.clientY - this.viewportData.prevMouse.y ]
-				if ( this.viewportData.mouseholdBG ) {
-					this.pan( { x: dx, y: dy } )
-					this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
-				}
 				if ( this.viewportData.currentSelectedNode ) {
 					this.viewportData.currentSelectedNode.moveByUnit( dx, dy )
 				}
@@ -141,10 +146,9 @@ export default {
 		overflow: visible
 		pointer-events: none
 	.nodeGraphBG
-		// background: yellow
-		width: 100%
-		height: 100%
-		position: absolute
+		width: calc( 100% - 15px )
+		height: calc( 100% - 15px )
+		position: fixed
 		background: rgba( 0, 0, 0, 0 )
 		pointer-events: auto
 </style>
