@@ -21,8 +21,8 @@ export default {
 			let port = $( this.$refs.ioPort )
 			, [ hw, hh ] = [ port.width() * 0.5, port.height() * 0.5 ]
 			, off = port.offset()
-			, vp = $( this.$parent.$parent.$refs.nodeGraphContainer )
-			, vpOff = $( this.$parent.$parent.$refs.nodeGraphContainer ).offset()
+			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
+			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
 			, mat = $( this.$parent.$parent.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
 			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() + hw - mat[ 4 ] ) / mat[ 0 ]
 			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() + hh - mat[ 5 ] ) / mat[ 0 ]
@@ -31,7 +31,9 @@ export default {
 	mounted() {
 		this.io.__vue__ = this
 		this.updatePosition()
-		this.$parent.$on( 'updatePosition', this.updatePosition )
+		this.$parent.$on( 'updatePosition', ( uuid ) => {
+			this.updatePosition()
+		} )
 	}
 }
 </script>

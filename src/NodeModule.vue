@@ -39,7 +39,6 @@ export default {
 		},
 	},
 	mounted() {
-		console.log( this.node )
 		$( this.$refs.nodeModule )
 			.on( 'mousedown', ( evt ) => {
 				prevPos = $( this.$refs.nodeModule ).position()

@@ -16,7 +16,6 @@
 				<NodeModule v-for="node in nodes" :key="node.uuid" :node="node"></NodeModule>
 			</div>
 
-
 		</div>
 
 	</div>
@@ -53,7 +52,6 @@ export default {
 		},
 		zoom( anchor, delta ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
-
 			let mat = nCont.css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
 			, dd = - Math.sign( delta ) * 0.1
 			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.viewportData.minZoom )
@@ -143,7 +141,7 @@ export default {
 		overflow: visible
 		pointer-events: none
 	.nodeGraphBG
-		background: yellow
+		// background: yellow
 		width: 100%
 		height: 100%
 		position: absolute
