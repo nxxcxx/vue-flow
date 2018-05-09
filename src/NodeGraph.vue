@@ -13,7 +13,10 @@
 			</svg>
 
 			<div class="nodeContainer">
-				<NodeModule v-for="node in nodes" :key="node.uuid" :node="node"></NodeModule>
+				<NodeModule v-for="node in nodes" :key="node.uuid"
+					:node="node"
+					:selected="isNodeSelected( node )"
+				></NodeModule>
 			</div>
 
 		</div>
@@ -38,11 +41,13 @@ export default {
 		return {
 			nodes: [],
 			connections: [],
+			selectedNodes: [],
 			viewportData: {
 				minZoom: 0.2,
 				zoomFactor: 1.0,
 				prevMouse: { x: 0, y: 0 },
-				mouseholdBG: false,
+				mouseHoldBg: false,
+				mouseHoldNode: false,
 				middleMouseHold: false,
 				currentSelectedNode: null,
 			}
@@ -82,25 +87,66 @@ export default {
 			let graph = importGraphConfiguration()
 			this.nodes = graph.nodes
 			this.connections = graph.connections
+		},
+		clearSelectedNodes() {
+			this.nodes.forEach( n => { n.__vue__.clearSelecting() } )
+			this.selectedNodes = []
+		},
+		addNodeToSelection( node, clear ) {
+			if ( clear )
+				return this.selectedNodes = [ node ]
+			if ( this.isNodeSelected( node ) ) {
+				console.log( 'dupe selection' )
+			} else {
+				this.selectedNodes.push( node )
+			}
+		},
+		isNodeSelected( node ) {
+			return this.selectedNodes.find( n => n.uuid === node.uuid ) !== undefined
 		}
 	},
 	created() {
 		this.importGraph()
 	},
 	mounted() {
+		this.nodes.forEach( n => {
+			n.__vue__.moveByUnit( n.position.x, n.position.y )
+		} )
 		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
-		EventBus.$on( 'vp-set-select-node', nodeCmp => {
-			this.viewportData.currentSelectedNode = nodeCmp
+		EventBus.$on( 'node-mousedown', ev => {
+			if ( !this.isNodeSelected( ev.node ) ) {
+				if ( ev.shiftKey ) {
+					console.log( 1 )
+					this.addNodeToSelection( ev.node )
+				} else {
+					console.log( 2 )
+					this.addNodeToSelection( ev.node, true )
+				}
+			}
+			this.viewportData.mouseHoldNode = true
+			console.log( this.selectedNodes )
+		} )
+		EventBus.$on( 'node-mouseup', ev => {
+			this.viewportData.mouseHoldNode = false
+			this.selectedNodes.forEach( node => {
+				node.__vue__.recordPrevPos()
+			} )
 		} )
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ( ev ) => {
-				this.viewportData.mouseholdBG = true
+				this.viewportData.mouseHoldBg = true
 			} )
 			.on( 'mousemove', ( ev ) => {
 				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
-				if ( this.viewportData.mouseholdBG && this.middleMouseHold ) {
+				if ( this.viewportData.mouseHoldBg && this.viewportData.middleMouseHold ) {
 					this.pan( { x: dx, y: dy } )
 					this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
+				}
+			} )
+			.on( 'mouseup', ev => {
+				if ( ev.button !== 1 ) {
+					this.clearSelectedNodes()
+					console.log( 'clearSelectedNodes' )
 				}
 			} )
 		$( this.$refs.nodeGraphRoot )
@@ -110,14 +156,13 @@ export default {
 			.on( 'mousedown', ev => {
 				if ( ev.button === 1 ) {
 					ev.preventDefault()
-					this.middleMouseHold = true
+					this.viewportData.middleMouseHold = true
 				}
 				this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				this.viewportData.mouseholdBG = false
-				this.viewportData.currentSelectedNode = null
-				this.middleMouseHold = false
+				this.viewportData.mouseHoldBg = false
+				this.viewportData.middleMouseHold = false
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -132,8 +177,10 @@ export default {
 		$( this.$refs.nodeGraphRoot )
 			.on( 'mousemove', ev => {
 				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
-				if ( this.viewportData.currentSelectedNode ) {
-					this.viewportData.currentSelectedNode.moveByUnit( dx, dy )
+				if ( this.selectedNodes.length > 0 && this.viewportData.mouseHoldNode ) {
+					this.selectedNodes.forEach( node => {
+						node.__vue__.moveByUnit( dx, dy )
+					} )
 				}
 			} )
 	}

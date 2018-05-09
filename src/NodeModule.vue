@@ -1,5 +1,8 @@
 <template>
-	<div ref="nodeModule" class="nodeModule" :style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }">
+	<div ref="nodeModule" class="nodeModule"
+		:style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }"
+		:class="{ selected, tmpSelected: selecting }"
+	>
 		<div class="header">
 			{{ node.name }}
 		</div>
@@ -21,28 +24,54 @@
 import EventBus from './EventBus.js'
 import NodeModuleIO from './NodeModuleIO.vue'
 
-let prevPos = { left: 0, top: 0 }
-
 export default {
 	name: 'NodeModule',
 	components: { NodeModuleIO },
-	props: [ 'node' ],
+	props: [ 'node', 'selected' ],
+	data() {
+		return {
+			prevPos: { left: 0, top: 0 },
+			selecting: false
+		}
+	},
 	methods: {
+		setSelecting() {
+			this.selecting = true
+		},
+		clearSelecting() {
+			this.selecting = false
+		},
 		setPosition( x, y ) {
 			this.node.position = { x, y }
 		},
+		recordPrevPos() {
+			this.prevPos = $( this.$refs.nodeModule ).position()
+		},
 		moveByUnit( dx, dy ) {
 			let zf = this.$parent.viewportData.zoomFactor
-			, [ x, y ] = [ ( prevPos.left + dx ) / zf, ( prevPos.top + dy ) / zf ]
+			, [ x, y ] = [ ( this.prevPos.left + dx ) / zf, ( this.prevPos.top + dy ) / zf ]
 			this.setPosition( x, y )
 			this.$emit( 'updatePosition', this.node.uuid )
+			// TODO: cleanup relative width/height
+			let nm = $( this.$refs.nodeModule )
+			this.node._posRightRel = ( nm.position().left + nm.width() ) / zf
+			this.node._posBottomRel = ( nm.position().top + nm.height() ) / zf
 		},
+	},
+	created() {
+		this.node.__vue__ = this
 	},
 	mounted() {
 		$( this.$refs.nodeModule )
-			.on( 'mousedown', ( evt ) => {
-				prevPos = $( this.$refs.nodeModule ).position()
-				EventBus.$emit( 'vp-set-select-node', evt.currentTarget.__vue__ )
+			.on( 'mousedown', ev => {
+				this.recordPrevPos()
+				EventBus.$emit( 'node-mousedown', {
+					node: this.node,
+					shiftKey: ev.shiftKey
+				} )
+			} )
+			.on( 'mouseup', ev => {
+				EventBus.$emit( 'node-mouseup' )
 			} )
 	}
 }
@@ -62,7 +91,10 @@ export default {
 		border: 1px solid $g5
 		&:hover
 			border: 1px solid $b0
-
+		&.selected
+			border: 1px solid $b0
+		&.tmpSelected
+			border: 1px solid #d03b26
 	.ioContainer
 		display: flex
 		justify-content: space-between

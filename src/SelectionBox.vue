@@ -29,13 +29,15 @@ export default {
 			this.prevPos = { x: ev.clientX, y: ev.clientY }
 			this.prevPosRel = this.$parent.getMousePositionRelative( ev )
 			this.visible = true
+			this.deselect()
 		} )
 		.on( 'mouseup', ev => {
 			this.visible = false
 			this.resetSelectionBox()
 		} )
 		.on( 'mousemove', ev => {
-			if ( !this.$parent.viewportData.mouseholdBG ) return
+			if ( !this.$parent.viewportData.mouseHoldBg ) return
+			this.deselect()
 			let [ cp, pp ] = [ { x: ev.clientX, y: ev.clientY }, this.prevPos ]
 			, ppr = this.prevPosRel
 			, cpr = this.cpr = this.$parent.getMousePositionRelative( ev )
@@ -43,18 +45,45 @@ export default {
 			this.height = Math.abs( cp.y - pp.y )
 			if ( cp.x < pp.x && cp.y < pp.y ) {
 				setPosition( cp.x, cp.y )
+				this.select( cpr.x, cpr.y )
 			} else if ( cp.x < pp.x ) {
 				setPosition( cp.x, pp.y )
+				this.select( cpr.x, ppr.y )
 			} else if ( cp.y < pp.y ) {
 				setPosition( pp.x, cp.y )
+				this.select( ppr.x, cpr.y )
 			} else {
 				setPosition( pp.x, pp.y )
+				this.select( ppr.x, ppr.y )
 			}
 		} )
 	},
 	methods: {
 		resetSelectionBox() {
 			this.width = this.height = this.top = this.left = 0
+		},
+		select( l, t ) {
+			this.$parent.nodes.forEach( n => {
+				if ( doRectIntersect( {
+					l,
+					t,
+					r: l + Math.abs( this.cpr.x - this.prevPosRel.x ),
+					b: t + Math.abs( this.cpr.y - this.prevPosRel.y )
+				}, {
+					l: n.position.x,
+					t: n.position.y,
+					r: n._posRightRel,
+					b: n._posBottomRel
+				} ) ) {
+					n.__vue__.setSelecting()
+				}
+			} )
+			function doRectIntersect( r1, r2 ) {
+				return !( r2.l > r1.r || r2.r < r1.l || r2.t > r1.b || r2.b < r1.t )
+			}
+		},
+		deselect() {
+			// this.$parent.clearSelectedNodes()
 		}
 	}
 }
