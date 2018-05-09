@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { EventBus } from './EventBus.js'
+import EventBus from './EventBus.js'
 import NodeModuleIO from './NodeModuleIO.vue'
 
 let prevPos = { left: 0, top: 0 }
@@ -52,6 +52,7 @@ export default {
 	$d0: rgb(24,26,28)
 	$g5: #5d5d5d
 	$g6: #bababa
+	$b0: #0bb1f9
 
 	.nodeModule
 		position: absolute
@@ -59,6 +60,8 @@ export default {
 		background: $d0
 		pointer-events: auto
 		border: 1px solid $g5
+		&:hover
+			border: 1px solid $b0
 
 	.ioContainer
 		display: flex

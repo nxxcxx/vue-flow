@@ -23,7 +23,7 @@
 
 <script>
 
-import { EventBus } from './EventBus.js'
+import EventBus from './EventBus.js'
 import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
 import importGraphConfiguration from './import.svc.js'
@@ -60,6 +60,7 @@ export default {
 			, yy = sd * ( mat[ 5 ] - anchor.y ) + anchor.y
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
 			this.viewportData.zoomFactor = sf
+			EventBus.$emit( 'vp-zoom' )
 		},
 		importGraph() {
 			let graph = importGraphConfiguration()
@@ -78,7 +79,6 @@ export default {
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ( evt ) => {
 				this.viewportData.mouseholdBG = true
-				console.log( 'bg md' )
 			} )
 			.on( 'mousemove', ( evt ) => {
 				let [ dx, dy ] = [ evt.clientX - this.viewportData.prevMouse.x, evt.clientY - this.viewportData.prevMouse.y ]
@@ -95,7 +95,6 @@ export default {
 			.on( 'mouseup', ( evt ) => {
 				this.viewportData.mouseholdBG = false
 				this.viewportData.currentSelectedNode = null
-				console.log( 'root mu' )
 			} )
 			.on( 'wheel', ( evt ) => {
 				evt.preventDefault()
@@ -121,13 +120,15 @@ export default {
 <style lang="sass">
 	#nodeGraphRoot
 		background: url( 'assets/grid.png' )
-		background-size: 15px
+		background-size: 20px
 		cursor: default
 		transform-style: preserve-3d
 		overflow: scroll
 		position: absolute
-		height: 100%
-		width: 100%
+		height: 90%
+		width: 80%
+		left: 20%
+		top: 10%
 	.nodeGraphContainer
 		overflow: visible
 		pointer-events: none
@@ -145,9 +146,11 @@ export default {
 		background: rgba( 0, 0, 0, 0 )
 		overflow: visible
 		pointer-events: none
+		transform-origin: 0px 0px
+		transform: matrix( 1, 0, 0, 1, 0, 0 )
 	.nodeGraphBG
-		width: calc( 100% - 15px )
-		height: calc( 100% - 15px )
+		width: calc( 80% - 15px )
+		height: calc( 90% - 15px )
 		position: fixed
 		background: rgba( 0, 0, 0, 0 )
 		pointer-events: auto

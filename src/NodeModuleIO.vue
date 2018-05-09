@@ -11,6 +11,8 @@
 </template>
 
 <script>
+import EventBus from './EventBus.js'
+
 export default {
 	name: 'NodeModuleIO',
 	props: [ 'type', 'io' ],
@@ -24,14 +26,18 @@ export default {
 			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
 			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
 			, mat = $( this.$parent.$parent.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
-			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() + hw - mat[ 4 ] ) / mat[ 0 ]
-			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() + hh - mat[ 5 ] ) / mat[ 0 ]
+			, d = - 4584.56 + ( 0.00108889 + 4584.56 ) / ( 1 + Math.pow( mat[ 0 ] / 799053.8, 1.090814 ) ) // fix scale discrepacy ( calculated using curve fitting )
+			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() + hw - mat[ 4 ] ) / ( mat[ 0 ] + d )
+			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() + hh - mat[ 5 ] ) / ( mat[ 0 ] + d )
 		}
 	},
 	mounted() {
 		this.io.__vue__ = this
 		this.updatePosition()
 		this.$parent.$on( 'updatePosition', ( uuid ) => {
+			this.updatePosition()
+		} )
+		EventBus.$on( 'vp-zoom', () => {
 			this.updatePosition()
 		} )
 	}
@@ -43,7 +49,7 @@ export default {
 	$w1: #e6e6e6
 	$w0: #bababa
 	$t0: rgba(0,0,0,0)
-	$cb1: #0bb1f9
+	$b0: #0bb1f9
 
 	.ioRow
 		display: flex
@@ -74,8 +80,8 @@ export default {
 			border: 1px solid $g0
 			border-left: 0px
 
-		&.selected
-			border: 1px solid $cb1
+		&:hover
+			border: 1px solid $b0
 			border-left: 0px
 
 	.outputRow
@@ -90,8 +96,8 @@ export default {
 			border: 1px solid $g0
 			border-right: 0px
 
-		&.selected
-			border: 1px solid $cb1
+		&:hover
+			border: 1px solid $b0
 			border-right: 0px
 
 
