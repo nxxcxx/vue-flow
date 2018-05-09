@@ -18,6 +18,8 @@
 
 		</div>
 
+		<SelectionBox></SelectionBox>
+
 	</div>
 </template>
 
@@ -26,11 +28,12 @@
 import EventBus from './EventBus.js'
 import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
+import SelectionBox from './SelectionBox.vue'
 import importGraphConfiguration from './import.svc.js'
 
 export default {
 	name: 'app',
-	components: { NodeModule, NodeConnection },
+	components: { NodeModule, NodeConnection, SelectionBox },
 	data() {
 		return {
 			nodes: [],
@@ -40,11 +43,24 @@ export default {
 				zoomFactor: 1.0,
 				prevMouse: { x: 0, y: 0 },
 				mouseholdBG: false,
+				middleMouseHold: false,
 				currentSelectedNode: null,
 			}
 		}
 	},
 	methods: {
+		getContainerMatrix() {
+			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+		},
+		getMousePositionRelative( ev ) {
+			let vp = $( this.$refs.nodeGraphRoot )
+			, offset = vp.offset()
+			, mat = this.getContainerMatrix()
+			return {
+				x: ( ev.clientX - offset.left + vp.scrollLeft() - mat[ 4 ] ) / this.viewportData.zoomFactor,
+				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.viewportData.zoomFactor
+			}
+		},
 		pan( delta ) {
 			let vp = $( this.$refs.nodeGraphRoot )
 			vp.scrollLeft( vp.scrollLeft() - delta.x )
@@ -52,7 +68,7 @@ export default {
 		},
 		zoom( anchor, delta ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
-			let mat = nCont.css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+			let mat = this.getContainerMatrix()
 			, dd = - Math.sign( delta ) * 0.1
 			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.viewportData.minZoom )
 			, sd = sf / mat[ 0 ]
@@ -77,38 +93,45 @@ export default {
 			this.viewportData.currentSelectedNode = nodeCmp
 		} )
 		$( this.$refs.nodeGraphBG )
-			.on( 'mousedown', ( evt ) => {
+			.on( 'mousedown', ( ev ) => {
 				this.viewportData.mouseholdBG = true
 			} )
-			.on( 'mousemove', ( evt ) => {
-				let [ dx, dy ] = [ evt.clientX - this.viewportData.prevMouse.x, evt.clientY - this.viewportData.prevMouse.y ]
-				if ( this.viewportData.mouseholdBG ) {
+			.on( 'mousemove', ( ev ) => {
+				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
+				if ( this.viewportData.mouseholdBG && this.middleMouseHold ) {
 					this.pan( { x: dx, y: dy } )
-					this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
+					this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
 				}
 			} )
 		$( this.$refs.nodeGraphRoot )
-			.on( 'mousedown', ( evt ) => {
-				if ( evt.button === 1 ) evt.preventDefault()
-				this.viewportData.prevMouse = { x: evt.clientX, y: evt.clientY }
+			.on( 'contextmenu', ev => {
+				ev.preventDefault()
 			} )
-			.on( 'mouseup', ( evt ) => {
+			.on( 'mousedown', ev => {
+				if ( ev.button === 1 ) {
+					ev.preventDefault()
+					this.middleMouseHold = true
+				}
+				this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
+			} )
+			.on( 'mouseup', ev => {
 				this.viewportData.mouseholdBG = false
 				this.viewportData.currentSelectedNode = null
+				this.middleMouseHold = false
 			} )
-			.on( 'wheel', ( evt ) => {
-				evt.preventDefault()
+			.on( 'wheel', ev => {
+				ev.preventDefault()
 				let vp = $( this.$refs.nodeGraphRoot )
 				let off = vp.offset()
 				let anchor = {
-					x: evt.clientX - off.left + vp.scrollLeft(),
-					y: evt.clientY - off.top + vp.scrollTop()
+					x: ev.clientX - off.left + vp.scrollLeft(),
+					y: ev.clientY - off.top + vp.scrollTop()
 				}
-				this.zoom( anchor, evt.originalEvent.deltaY )
+				this.zoom( anchor, ev.originalEvent.deltaY )
 			} )
 		$( this.$refs.nodeGraphRoot )
-			.on( 'mousemove', ( evt ) => {
-				let [ dx, dy ] = [ evt.clientX - this.viewportData.prevMouse.x, evt.clientY - this.viewportData.prevMouse.y ]
+			.on( 'mousemove', ev => {
+				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
 				if ( this.viewportData.currentSelectedNode ) {
 					this.viewportData.currentSelectedNode.moveByUnit( dx, dy )
 				}
@@ -119,8 +142,7 @@ export default {
 
 <style lang="sass">
 	#nodeGraphRoot
-		background: url( 'assets/grid.png' )
-		background-size: 20px
+		user-select: none
 		cursor: default
 		transform-style: preserve-3d
 		overflow: scroll
@@ -130,6 +152,8 @@ export default {
 		left: 20%
 		top: 10%
 	.nodeGraphContainer
+		background: url( 'assets/grid.png' )
+		background-size: 20px
 		overflow: visible
 		pointer-events: none
 		position: absolute

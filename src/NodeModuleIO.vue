@@ -25,8 +25,8 @@ export default {
 			, off = port.offset()
 			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
 			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
-			, mat = $( this.$parent.$parent.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
-			, d = - 4584.56 + ( 0.00108889 + 4584.56 ) / ( 1 + Math.pow( mat[ 0 ] / 799053.8, 1.090814 ) ) // fix scale discrepacy ( calculated using curve fitting )
+			, mat = this.$parent.$parent.getContainerMatrix()
+			, d = - 4584.56 + ( 0.00108889 + 4584.56 ) / ( 1 + Math.pow( mat[ 0 ] / 799053.8, 1.090814 ) ) // fix scale discrepacy using curve fitting
 			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() + hw - mat[ 4 ] ) / ( mat[ 0 ] + d )
 			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() + hh - mat[ 5 ] ) / ( mat[ 0 ] + d )
 		}
@@ -81,8 +81,8 @@ export default {
 			border-left: 0px
 
 		&:hover
-			border: 1px solid $b0
 			border-left: 0px
+			background: white
 
 	.outputRow
 		flex-direction: row-reverse
@@ -97,7 +97,7 @@ export default {
 			border-right: 0px
 
 		&:hover
-			border: 1px solid $b0
+			background: white
 			border-right: 0px
 
 
