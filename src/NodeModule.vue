@@ -52,10 +52,6 @@ export default {
 			, [ x, y ] = [ ( this.prevPos.left + dx ) / zf, ( this.prevPos.top + dy ) / zf ]
 			this.setPosition( x, y )
 			this.$emit( 'updatePosition', this.node.uuid )
-			// TODO: cleanup relative width/height
-			let nm = $( this.$refs.nodeModule )
-			this.node._posRightRel = ( nm.position().left + nm.width() ) / zf
-			this.node._posBottomRel = ( nm.position().top + nm.height() ) / zf
 		},
 	},
 	created() {
@@ -90,11 +86,11 @@ export default {
 		pointer-events: auto
 		border: 1px solid $g5
 		&:hover
-			border: 1px solid $b0
-		&.selected
-			border: 1px solid $b0
+			// border: 1px solid $b0
 		&.tmpSelected
 			border: 1px solid #d03b26
+		&.selected
+			border: 1px solid $b0
 	.ioContainer
 		display: flex
 		justify-content: space-between

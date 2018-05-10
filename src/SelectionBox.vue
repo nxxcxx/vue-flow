@@ -1,6 +1,6 @@
 <template>
 	<div id="selectionBox"
-	v-show="visible"
+	v-show="enable"
 	:style="{
 		width: width + 'px', height: height + 'px',
 		top: top + 'px', left: left + 'px' }">
@@ -12,7 +12,8 @@ export default {
 	name: 'SelectionBox',
 	data() {
 		return {
-			visible: false,
+			forceDisable: false,
+			enable: false,
 			width: 0,
 			height: 0,
 			top: 0,
@@ -25,19 +26,18 @@ export default {
 		let vp = $( this.$parent.$refs.nodeGraphRoot )
 		let setPosition = ( l, t ) => { [ this.left, this.top ] = [ l, t ] }
 		vp.on( 'mousedown', ev => {
+			if ( this.forceDisable ) return
 			if ( ev.button !== 0 ) return
 			this.prevPos = { x: ev.clientX, y: ev.clientY }
 			this.prevPosRel = this.$parent.getMousePositionRelative( ev )
-			this.visible = true
-			this.deselect()
+			this.enable = true
 		} )
 		.on( 'mouseup', ev => {
-			this.visible = false
+			this.enable = false
 			this.resetSelectionBox()
 		} )
 		.on( 'mousemove', ev => {
-			if ( !this.$parent.viewportData.mouseHoldBg ) return
-			this.deselect()
+			if ( !this.enable ) return
 			let [ cp, pp ] = [ { x: ev.clientX, y: ev.clientY }, this.prevPos ]
 			, ppr = this.prevPosRel
 			, cpr = this.cpr = this.$parent.getMousePositionRelative( ev )
@@ -63,6 +63,7 @@ export default {
 			this.width = this.height = this.top = this.left = 0
 		},
 		select( l, t ) {
+			let zf = this.$parent.viewportData.zoomFactor
 			this.$parent.nodes.forEach( n => {
 				if ( doRectIntersect( {
 					l,
@@ -72,10 +73,12 @@ export default {
 				}, {
 					l: n.position.x,
 					t: n.position.y,
-					r: n._posRightRel,
-					b: n._posBottomRel
+					r: n.position.x + $( n.__vue__.$refs.nodeModule ).outerWidth(),
+					b: n.position.y + $( n.__vue__.$refs.nodeModule ).outerHeight()
 				} ) ) {
 					n.__vue__.setSelecting()
+				} else {
+					n.__vue__.clearSelecting()
 				}
 			} )
 			function doRectIntersect( r1, r2 ) {
@@ -83,7 +86,7 @@ export default {
 			}
 		},
 		deselect() {
-			// this.$parent.clearSelectedNodes()
+			this.$parent.clearSelectedNodes()
 		}
 	}
 }

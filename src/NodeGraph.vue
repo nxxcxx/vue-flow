@@ -17,6 +17,10 @@
 					:node="node"
 					:selected="isNodeSelected( node )"
 				></NodeModule>
+				<div
+					style="width: 10px; height: 10px; position: absolute; background: red; pointer-events: none;"
+					:style="{ left: tx + 'px', top: ty + 'px' }"
+				></div>
 			</div>
 
 		</div>
@@ -50,7 +54,9 @@ export default {
 				mouseHoldNode: false,
 				middleMouseHold: false,
 				currentSelectedNode: null,
-			}
+			},
+			tx: 0,
+			ty: 0
 		}
 	},
 	methods: {
@@ -89,7 +95,6 @@ export default {
 			this.connections = graph.connections
 		},
 		clearSelectedNodes() {
-			this.nodes.forEach( n => { n.__vue__.clearSelecting() } )
 			this.selectedNodes = []
 		},
 		addNodeToSelection( node, clear ) {
@@ -111,9 +116,11 @@ export default {
 	mounted() {
 		this.nodes.forEach( n => {
 			n.__vue__.moveByUnit( n.position.x, n.position.y )
+			n.__vue__.recordPrevPos()
 		} )
 		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 		EventBus.$on( 'node-mousedown', ev => {
+			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
 			if ( !this.isNodeSelected( ev.node ) ) {
 				if ( ev.shiftKey ) {
 					console.log( 1 )
@@ -144,10 +151,7 @@ export default {
 				}
 			} )
 			.on( 'mouseup', ev => {
-				if ( ev.button !== 1 ) {
-					this.clearSelectedNodes()
-					console.log( 'clearSelectedNodes' )
-				}
+
 			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'contextmenu', ev => {
@@ -163,6 +167,15 @@ export default {
 			.on( 'mouseup', ev => {
 				this.viewportData.mouseHoldBg = false
 				this.viewportData.middleMouseHold = false
+				if ( ev.button !== 1 ) {
+					this.clearSelectedNodes()
+					this.nodes.forEach( n => {
+						if ( n.__vue__.selecting ) {
+							this.addNodeToSelection( n )
+							n.__vue__.clearSelecting()
+						}
+					} )
+				}
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -176,6 +189,11 @@ export default {
 			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'mousemove', ev => {
+
+				let rm = this.getMousePositionRelative( ev )
+				this.tx = rm.x
+				this.ty = rm.y
+
 				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
 				if ( this.selectedNodes.length > 0 && this.viewportData.mouseHoldNode ) {
 					this.selectedNodes.forEach( node => {
