@@ -48,7 +48,7 @@ export default {
 			this.prevPos = $( this.$refs.nodeModule ).position()
 		},
 		moveByUnit( dx, dy ) {
-			let zf = this.$parent.viewportData.zoomFactor
+			let zf = this.$parent.vpd.zoomFactor
 			, [ x, y ] = [ ( this.prevPos.left + dx ) / zf, ( this.prevPos.top + dy ) / zf ]
 			this.setPosition( x, y )
 			this.$emit( 'update-io-position', this.node.uuid )
@@ -59,13 +59,8 @@ export default {
 	},
 	mounted() {
 		$( this.$refs.nodeModule )
-			// .on( 'click', ev => {
-			// 	EventBus.$emit( 'node-click', {
-			// 		node: this.node,
-			// 		shiftKey: ev.shiftKey
-			// 	} )
-			// } )
 			.on( 'mousedown', ev => {
+				if ( ev.button !== 0 ) return
 				this.recordPrevPos()
 				EventBus.$emit( 'node-mousedown', {
 					node: this.node,

@@ -9,7 +9,7 @@ function importGraphConfiguration() {
 		let nm = new nodeFactory.Node( node.name )
 		nm._fnstr = node._fnstr
 		nm.position = node.position
-		// off set to center
+		// offset to center
 		nm.position.x += 2000
 		nm.position.y += 2000
 		for ( let input of node.input ) {

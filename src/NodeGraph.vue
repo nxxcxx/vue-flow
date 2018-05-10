@@ -48,8 +48,7 @@ export default {
 			connections: [],
 			selectedNodes: [],
 			tempConnectionPair: [ null, null ],
-			enableSelectionBox: false,
-			viewportData: {
+			vpd: {
 				minZoom: 0.2,
 				zoomFactor: 1.0,
 				prevMouse: { x: 0, y: 0 },
@@ -62,10 +61,17 @@ export default {
 			gy1: 0,
 			gx2: 100,
 			gy2: 100,
+			enableSelectionBox: false,
 			enableConnectionGhost: false,
 		}
 	},
 	methods: {
+		init() {
+			this.nodes.forEach( n => {
+				n.__vue__.moveByUnit( n.position.x, n.position.y )
+				n.__vue__.recordPrevPos()
+			} )
+		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
 		},
@@ -74,8 +80,8 @@ export default {
 			, offset = vp.offset()
 			, mat = this.getContainerMatrix()
 			return {
-				x: ( ev.clientX - offset.left + vp.scrollLeft() - mat[ 4 ] ) / this.viewportData.zoomFactor,
-				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.viewportData.zoomFactor
+				x: ( ev.clientX - offset.left + vp.scrollLeft() - mat[ 4 ] ) / this.vpd.zoomFactor,
+				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.vpd.zoomFactor
 			}
 		},
 		pan( delta ) {
@@ -87,12 +93,12 @@ export default {
 			let nCont = $( this.$refs.nodeGraphContainer )
 			let mat = this.getContainerMatrix()
 			, dd = - Math.sign( delta ) * 0.1
-			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.viewportData.minZoom )
+			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.vpd.minZoom )
 			, sd = sf / mat[ 0 ]
 			, xx = sd * ( mat[ 4 ] - anchor.x ) + anchor.x
 			, yy = sd * ( mat[ 5 ] - anchor.y ) + anchor.y
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
-			this.viewportData.zoomFactor = sf
+			this.vpd.zoomFactor = sf
 			EventBus.$emit( 'vp-zoom' )
 		},
 		importGraph() {
@@ -120,10 +126,7 @@ export default {
 		this.importGraph()
 	},
 	mounted() {
-		this.nodes.forEach( n => {
-			n.__vue__.moveByUnit( n.position.x, n.position.y )
-			n.__vue__.recordPrevPos()
-		} )
+		this.init()
 		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 		EventBus.$on( 'node-click', ev => {
 			// console.log( 'node-click' )
@@ -138,7 +141,7 @@ export default {
 					this.addNodeToSelection( ev.node, true )
 				}
 			}
-			this.viewportData.mouseHoldNode = true
+			this.vpd.mouseHoldNode = true
 			this.movingNode = true
 			// console.log( this.selectedNodes )
 		} )
@@ -146,6 +149,9 @@ export default {
 			// console.log( 'node-mouseup' )
 			this.selectedNodes.forEach( node => {
 				node.__vue__.recordPrevPos()
+			} )
+			this.nodes.forEach( n => {
+				n.__vue__.$emit( 'update-io-position' )
 			} )
 		} )
 		EventBus.$on( 'io-start-connecting', io => {
@@ -160,26 +166,24 @@ export default {
 			this.enableConnectionGhost = false
 			this.tempConnectionPair[ io.type ] = io
 			console.log( this.tempConnectionPair )
-			if ( this.tempConnectionPair.indexOf( null ) >= 0 ) {
-				console.log( 'invalid conn' )
+			if (
+				/* validate connection
+					if not null
+					if not same parent
+					if not already exists
+					if valid topological order
+				*/
+				this.tempConnectionPair.indexOf( null ) < 0 &&
+				this.tempConnectionPair[ 0 ].parent.uuid !== this.tempConnectionPair[ 1 ].parent.uuid
+			) {
+				// disconnect inp
+				// this.connections.push( [ this.tempConnectionPair[ 0 ], this.tempConnectionPair[ 1 ] ] )
 			}
 		} )
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ev => {
-				this.viewportData.mouseHoldBg = true
-				if ( ev.button === 0 ) {
-					this.enableSelectionBox = true
-				}
-			} )
-			.on( 'mousemove', ev => {
-				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
-				if ( this.viewportData.mouseHoldBg && this.viewportData.middleMouseHold ) {
-					this.pan( { x: dx, y: dy } )
-					this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
-				}
-			} )
-			.on( 'mouseup', ev => {
-
+				this.vpd.mouseHoldBg = true
+				if ( ev.button === 0 ) this.enableSelectionBox = true
 			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'contextmenu', ev => {
@@ -188,9 +192,9 @@ export default {
 			.on( 'mousedown', ev => {
 				if ( ev.button === 1 ) {
 					ev.preventDefault()
-					this.viewportData.middleMouseHold = true
+					this.vpd.middleMouseHold = true
 				}
-				this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
+				this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
 				// console.log( 'root-mouseup' )
@@ -204,10 +208,10 @@ export default {
 						}
 					} )
 				}
-				this.viewportData.mouseHoldBg = false
-				this.viewportData.middleMouseHold = false
+				this.vpd.mouseHoldBg = false
+				this.vpd.middleMouseHold = false
 				this.enableSelectionBox = false
-				this.viewportData.mouseHoldNode = false
+				this.vpd.mouseHoldNode = false
 				this.movingNode = false
 				this.ioConnecting = false
 				this.enableConnectionGhost = false
@@ -231,12 +235,23 @@ export default {
 				this.gx2 = rm.x
 				this.gy2 = rm.y
 
-				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
-				if ( this.selectedNodes.length > 0 && this.viewportData.mouseHoldNode && !this.ioConnecting ) {
+				let [ dx, dy ] = [ ev.clientX - this.vpd.prevMouse.x, ev.clientY - this.vpd.prevMouse.y ]
+
+				if ( this.vpd.middleMouseHold ) {
+					this.pan( { x: dx, y: dy } )
+					this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
+				}
+
+				if ( !this.vpd.middleMouseHold  &&
+					this.selectedNodes.length > 0 &&
+					this.vpd.mouseHoldNode &&
+					!this.ioConnecting
+				) {
 					this.selectedNodes.forEach( node => {
 						node.__vue__.moveByUnit( dx, dy )
 					} )
 				}
+
 			} )
 	}
 }
