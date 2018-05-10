@@ -51,7 +51,7 @@ export default {
 			let zf = this.$parent.viewportData.zoomFactor
 			, [ x, y ] = [ ( this.prevPos.left + dx ) / zf, ( this.prevPos.top + dy ) / zf ]
 			this.setPosition( x, y )
-			this.$emit( 'updatePosition', this.node.uuid )
+			this.$emit( 'update-io-position', this.node.uuid )
 		},
 	},
 	created() {
@@ -59,6 +59,12 @@ export default {
 	},
 	mounted() {
 		$( this.$refs.nodeModule )
+			.on( 'click', ev => {
+				EventBus.$emit( 'node-click', {
+					node: this.node,
+					shiftKey: ev.shiftKey
+				} )
+			} )
 			.on( 'mousedown', ev => {
 				this.recordPrevPos()
 				EventBus.$emit( 'node-mousedown', {

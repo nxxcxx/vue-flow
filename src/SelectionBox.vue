@@ -1,6 +1,6 @@
 <template>
 	<div id="selectionBox"
-	v-show="enable"
+	v-show="active"
 	:style="{
 		width: width + 'px', height: height + 'px',
 		top: top + 'px', left: left + 'px' }">
@@ -10,10 +10,10 @@
 <script>
 export default {
 	name: 'SelectionBox',
+	props: [ 'enable' ],
 	data() {
 		return {
-			forceDisable: false,
-			enable: false,
+			active: false,
 			width: 0,
 			height: 0,
 			top: 0,
@@ -26,18 +26,18 @@ export default {
 		let vp = $( this.$parent.$refs.nodeGraphRoot )
 		let setPosition = ( l, t ) => { [ this.left, this.top ] = [ l, t ] }
 		vp.on( 'mousedown', ev => {
-			if ( this.forceDisable ) return
+			if ( !this.enable ) return
 			if ( ev.button !== 0 ) return
 			this.prevPos = { x: ev.clientX, y: ev.clientY }
 			this.prevPosRel = this.$parent.getMousePositionRelative( ev )
-			this.enable = true
+			this.active = true
 		} )
 		.on( 'mouseup', ev => {
-			this.enable = false
+			this.active = false
 			this.resetSelectionBox()
 		} )
 		.on( 'mousemove', ev => {
-			if ( !this.enable ) return
+			if ( !this.active ) return
 			let [ cp, pp ] = [ { x: ev.clientX, y: ev.clientY }, this.prevPos ]
 			, ppr = this.prevPosRel
 			, cpr = this.cpr = this.$parent.getMousePositionRelative( ev )
@@ -63,7 +63,6 @@ export default {
 			this.width = this.height = this.top = this.left = 0
 		},
 		select( l, t ) {
-			let zf = this.$parent.viewportData.zoomFactor
 			this.$parent.nodes.forEach( n => {
 				if ( doRectIntersect( {
 					l,

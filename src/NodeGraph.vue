@@ -17,15 +17,15 @@
 					:node="node"
 					:selected="isNodeSelected( node )"
 				></NodeModule>
-				<div
+				<!-- <div
 					style="width: 10px; height: 10px; position: absolute; background: red; pointer-events: none;"
 					:style="{ left: tx + 'px', top: ty + 'px' }"
-				></div>
+				></div> -->
 			</div>
 
 		</div>
 
-		<SelectionBox></SelectionBox>
+		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
 
 	</div>
 </template>
@@ -46,6 +46,7 @@ export default {
 			nodes: [],
 			connections: [],
 			selectedNodes: [],
+			enableSelectionBox: false,
 			viewportData: {
 				minZoom: 0.2,
 				zoomFactor: 1.0,
@@ -119,31 +120,37 @@ export default {
 			n.__vue__.recordPrevPos()
 		} )
 		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
+		EventBus.$on( 'node-click', ev => {
+			console.log( 'node-click' )
+		} )
 		EventBus.$on( 'node-mousedown', ev => {
+			console.log( 'node-mousedown' )
 			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
 			if ( !this.isNodeSelected( ev.node ) ) {
 				if ( ev.shiftKey ) {
-					console.log( 1 )
 					this.addNodeToSelection( ev.node )
 				} else {
-					console.log( 2 )
 					this.addNodeToSelection( ev.node, true )
 				}
 			}
 			this.viewportData.mouseHoldNode = true
+			this.movingNode = true
 			console.log( this.selectedNodes )
 		} )
 		EventBus.$on( 'node-mouseup', ev => {
-			this.viewportData.mouseHoldNode = false
+			console.log( 'node-mouseup' )
 			this.selectedNodes.forEach( node => {
 				node.__vue__.recordPrevPos()
 			} )
 		} )
 		$( this.$refs.nodeGraphBG )
-			.on( 'mousedown', ( ev ) => {
+			.on( 'mousedown', ev => {
 				this.viewportData.mouseHoldBg = true
+				if ( ev.button === 0 ) {
+					this.enableSelectionBox = true
+				}
 			} )
-			.on( 'mousemove', ( ev ) => {
+			.on( 'mousemove', ev => {
 				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
 				if ( this.viewportData.mouseHoldBg && this.viewportData.middleMouseHold ) {
 					this.pan( { x: dx, y: dy } )
@@ -165,10 +172,11 @@ export default {
 				this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				this.viewportData.mouseHoldBg = false
-				this.viewportData.middleMouseHold = false
+				console.log( 'root-mouseup' )
+				console.log( this.movingNode )
 				if ( ev.button !== 1 ) {
-					this.clearSelectedNodes()
+					if ( !ev.shiftKey && !this.movingNode )
+							this.clearSelectedNodes()
 					this.nodes.forEach( n => {
 						if ( n.__vue__.selecting ) {
 							this.addNodeToSelection( n )
@@ -176,6 +184,11 @@ export default {
 						}
 					} )
 				}
+				this.viewportData.mouseHoldBg = false
+				this.viewportData.middleMouseHold = false
+				this.enableSelectionBox = false
+				this.viewportData.mouseHoldNode = false
+				this.movingNode = false
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()

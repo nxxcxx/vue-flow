@@ -34,7 +34,7 @@ export default {
 	mounted() {
 		this.io.__vue__ = this
 		this.updatePosition()
-		this.$parent.$on( 'updatePosition', ( uuid ) => {
+		this.$parent.$on( 'update-io-position', ( uuid ) => {
 			this.updatePosition()
 		} )
 		EventBus.$on( 'vp-zoom', () => {
