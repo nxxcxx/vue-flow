@@ -59,12 +59,12 @@ export default {
 	},
 	mounted() {
 		$( this.$refs.nodeModule )
-			.on( 'click', ev => {
-				EventBus.$emit( 'node-click', {
-					node: this.node,
-					shiftKey: ev.shiftKey
-				} )
-			} )
+			// .on( 'click', ev => {
+			// 	EventBus.$emit( 'node-click', {
+			// 		node: this.node,
+			// 		shiftKey: ev.shiftKey
+			// 	} )
+			// } )
 			.on( 'mousedown', ev => {
 				this.recordPrevPos()
 				EventBus.$emit( 'node-mousedown', {

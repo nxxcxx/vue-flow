@@ -17,11 +17,12 @@
 					:node="node"
 					:selected="isNodeSelected( node )"
 				></NodeModule>
-				<!-- <div
-					style="width: 10px; height: 10px; position: absolute; background: red; pointer-events: none;"
-					:style="{ left: tx + 'px', top: ty + 'px' }"
-				></div> -->
 			</div>
+
+			<svg class="nodeContainerSvg" style="pointer-events: none;">
+				<line ref="ghostConnection" v-show="enableConnectionGhost"
+					:x1="gx1" :y1="gy1" :x2="gx2" :y2="gy2" stroke="#0bb1f9" />
+			</svg>
 
 		</div>
 
@@ -46,6 +47,7 @@ export default {
 			nodes: [],
 			connections: [],
 			selectedNodes: [],
+			tempConnectionPair: [ null, null ],
 			enableSelectionBox: false,
 			viewportData: {
 				minZoom: 0.2,
@@ -56,8 +58,11 @@ export default {
 				middleMouseHold: false,
 				currentSelectedNode: null,
 			},
-			tx: 0,
-			ty: 0
+			gx1: 0,
+			gy1: 0,
+			gx2: 100,
+			gy2: 100,
+			enableConnectionGhost: false,
 		}
 	},
 	methods: {
@@ -102,7 +107,7 @@ export default {
 			if ( clear )
 				return this.selectedNodes = [ node ]
 			if ( this.isNodeSelected( node ) ) {
-				console.log( 'dupe selection' )
+				// console.log( 'dupe selection' )
 			} else {
 				this.selectedNodes.push( node )
 			}
@@ -121,10 +126,10 @@ export default {
 		} )
 		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 		EventBus.$on( 'node-click', ev => {
-			console.log( 'node-click' )
+			// console.log( 'node-click' )
 		} )
 		EventBus.$on( 'node-mousedown', ev => {
-			console.log( 'node-mousedown' )
+			// console.log( 'node-mousedown' )
 			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
 			if ( !this.isNodeSelected( ev.node ) ) {
 				if ( ev.shiftKey ) {
@@ -135,13 +140,29 @@ export default {
 			}
 			this.viewportData.mouseHoldNode = true
 			this.movingNode = true
-			console.log( this.selectedNodes )
+			// console.log( this.selectedNodes )
 		} )
 		EventBus.$on( 'node-mouseup', ev => {
-			console.log( 'node-mouseup' )
+			// console.log( 'node-mouseup' )
 			this.selectedNodes.forEach( node => {
 				node.__vue__.recordPrevPos()
 			} )
+		} )
+		EventBus.$on( 'io-start-connecting', io => {
+			this.ioConnecting = true
+			this.enableConnectionGhost = true
+			this.tempConnectionPair[ io.type ] = io
+			this.gx1 = io.position.x
+			this.gy1 = io.position.y
+		} )
+		EventBus.$on( 'io-end-connecting', io => {
+			this.ioConnecting = false
+			this.enableConnectionGhost = false
+			this.tempConnectionPair[ io.type ] = io
+			console.log( this.tempConnectionPair )
+			if ( this.tempConnectionPair.indexOf( null ) >= 0 ) {
+				console.log( 'invalid conn' )
+			}
 		} )
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ev => {
@@ -172,8 +193,7 @@ export default {
 				this.viewportData.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				console.log( 'root-mouseup' )
-				console.log( this.movingNode )
+				// console.log( 'root-mouseup' )
 				if ( ev.button !== 1 ) {
 					if ( !ev.shiftKey && !this.movingNode )
 							this.clearSelectedNodes()
@@ -189,6 +209,10 @@ export default {
 				this.enableSelectionBox = false
 				this.viewportData.mouseHoldNode = false
 				this.movingNode = false
+				this.ioConnecting = false
+				this.enableConnectionGhost = false
+				// reset connecting io pair
+				this.tempConnectionPair = [ null, null ]
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -204,11 +228,11 @@ export default {
 			.on( 'mousemove', ev => {
 
 				let rm = this.getMousePositionRelative( ev )
-				this.tx = rm.x
-				this.ty = rm.y
+				this.gx2 = rm.x
+				this.gy2 = rm.y
 
 				let [ dx, dy ] = [ ev.clientX - this.viewportData.prevMouse.x, ev.clientY - this.viewportData.prevMouse.y ]
-				if ( this.selectedNodes.length > 0 && this.viewportData.mouseHoldNode ) {
+				if ( this.selectedNodes.length > 0 && this.viewportData.mouseHoldNode && !this.ioConnecting ) {
 					this.selectedNodes.forEach( node => {
 						node.__vue__.moveByUnit( dx, dy )
 					} )

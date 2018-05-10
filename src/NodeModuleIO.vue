@@ -40,6 +40,13 @@ export default {
 		EventBus.$on( 'vp-zoom', () => {
 			this.updatePosition()
 		} )
+		$( this.$refs.ioPort )
+		.on( 'mousedown', ev => {
+			EventBus.$emit( 'io-start-connecting', this.io )
+		} )
+		.on( 'mouseup', ev => {
+			EventBus.$emit( 'io-end-connecting', this.io )
+		} )
 	}
 }
 </script>
