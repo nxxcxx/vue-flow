@@ -21,14 +21,13 @@ export default {
 		isOutput() { return this.type === 'output' },
 		updatePosition() {
 			let port = $( this.$refs.ioPort )
-			, [ hw, hh ] = [ port.width() * 0.5, port.height() * 0.5 ]
+			, [ hw, hh ] = [ port.width() * 0.5 + 1.0 , port.height() * 0.5 + 1.0 ]
 			, off = port.offset()
 			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
 			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
 			, mat = this.$parent.$parent.getContainerMatrix()
-			, d = - 4584.56 + ( 0.00108889 + 4584.56 ) / ( 1 + Math.pow( mat[ 0 ] / 799053.8, 1.090814 ) ) // fix scale discrepacy using curve fitting
-			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() + hw - mat[ 4 ] ) / ( mat[ 0 ] + d )
-			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() + hh - mat[ 5 ] ) / ( mat[ 0 ] + d )
+			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + hw
+			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hh
 		}
 	},
 	mounted() {

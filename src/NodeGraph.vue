@@ -67,6 +67,7 @@ export default {
 	},
 	methods: {
 		init() {
+			$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 			this.nodes.forEach( n => {
 				n.__vue__.moveByUnit( n.position.x, n.position.y )
 				n.__vue__.recordPrevPos()
@@ -127,7 +128,6 @@ export default {
 	},
 	mounted() {
 		this.init()
-		$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 		EventBus.$on( 'node-click', ev => {
 			// console.log( 'node-click' )
 		} )
