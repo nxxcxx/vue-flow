@@ -76,32 +76,36 @@ export default {
 
 <style lang="sass">
 	$d0: rgb(24,26,28)
-	$g5: #5d5d5d
-	$g6: #bababa
 	$b0: #0bb1f9
-
+	$w1: #e6e6e6
+	$r0: #0bb1f9
 	.nodeModule
 		position: absolute
 		padding: 4px 0px 4px 0px
 		background: $d0
 		pointer-events: auto
-		border: 1px solid $g5
+		box-sizing: border-box
+		border: 1px solid transparent
 		&:hover
-			// border: 1px solid $b0
+			border: 1px solid $r0
 		&.tmpSelected
-			border: 1px solid #d03b26
+			border: 1px solid $r0
 		&.selected
 			border: 1px solid $b0
+	.header
+		padding: 0px 4px
 	.ioContainer
 		display: flex
 		justify-content: space-between
-	.inputColumn
-		padding: 0px
-		display: inline-block
 	.separator
 		width: 16px
 		display: inline-block
+	.inputColumn
+		// margin-left: -1px
+		padding: 0px
+		display: inline-block
 	.outputColumn
+		// margin-right: -1px
 		padding: 0px
 		display: inline-block
 </style>

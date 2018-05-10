@@ -5,13 +5,6 @@
 
 		<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
-			<svg class="nodeContainerSvg">
-				<NodeConnection v-for="( conn, idx ) in connections" :key="idx"
-					:x1="conn[ 0 ].position.x" :y1="conn[ 0 ].position.y"
-					:x2="conn[ 1 ].position.x" :y2="conn[ 1 ].position.y"
-				></NodeConnection>
-			</svg>
-
 			<div class="nodeContainer">
 				<NodeModule v-for="node in nodes" :key="node.uuid"
 					:node="node"
@@ -19,9 +12,10 @@
 				></NodeModule>
 			</div>
 
-			<svg class="nodeContainerSvg" style="pointer-events: none;">
+			<svg class="nodeContainerSvg">
 				<line ref="ghostConnection" v-show="enableConnectionGhost"
 					:x1="gx1" :y1="gy1" :x2="gx2" :y2="gy2" stroke="#0bb1f9" />
+				<NodeConnection v-for="( conn, idx ) in connections" :key="idx" :conn="conn"></NodeConnection>
 			</svg>
 
 		</div>
@@ -72,6 +66,9 @@ export default {
 				n.__vue__.moveByUnit( n.position.x, n.position.y )
 				n.__vue__.recordPrevPos()
 			} )
+			this.connections.forEach( pair => {
+				this.connectIO( ...pair )
+			} )
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
@@ -120,8 +117,47 @@ export default {
 			}
 		},
 		isNodeSelected( node ) {
-			return this.selectedNodes.find( n => n.uuid === node.uuid ) !== undefined
-		}
+			return !!this.selectedNodes.find( n => n.uuid === node.uuid )
+		},
+		isConnectionExists( opt, inp ) {
+			return !!this.connections.find( io => io[ 0 ] === opt && io[ 1 ] === inp )
+		},
+		isConnectionCyclic( opt, inp ) {
+			// TODO
+			return false
+		},
+		isConnectionValid( pair ) {
+			let [ opt, inp ] = pair
+			/* validate connection
+				if not null
+				if not same parent
+				if not already exists
+				if valid topological order
+			*/
+			return ( opt !== null && inp !== null &&
+				opt.parent.uuid !== inp.parent.uuid &&
+				!this.isConnectionExists( opt, inp ) &&
+				!this.isConnectionCyclic( opt, inp )
+			)
+		},
+		_disconnectInput( inp ) {
+			inp.disconnect()
+			this.connections = this.connections.filter( io => io[ 1 ] !== inp )
+		},
+		disconnectIO( io ) {
+			if ( io.type === 1 )
+				this._disconnectInput( io )
+			else {
+				for ( let inp of [ ...io.input ] ) {
+					this._disconnectInput( inp )
+				}
+			}
+		},
+		connectIO( opt, inp ) {
+			this._disconnectInput( inp )
+			inp.connect( opt )
+			this.connections.push( [ opt, inp ] )
+		},
 	},
 	created() {
 		this.importGraph()
@@ -165,20 +201,13 @@ export default {
 			this.ioConnecting = false
 			this.enableConnectionGhost = false
 			this.tempConnectionPair[ io.type ] = io
-			console.log( this.tempConnectionPair )
-			if (
-				/* validate connection
-					if not null
-					if not same parent
-					if not already exists
-					if valid topological order
-				*/
-				this.tempConnectionPair.indexOf( null ) < 0 &&
-				this.tempConnectionPair[ 0 ].parent.uuid !== this.tempConnectionPair[ 1 ].parent.uuid
-			) {
-				// disconnect inp
-				// this.connections.push( [ this.tempConnectionPair[ 0 ], this.tempConnectionPair[ 1 ] ] )
+			if ( this.isConnectionValid( this.tempConnectionPair ) ) {
+				console.log( this.tempConnectionPair )
+				this.connectIO( ...this.tempConnectionPair )
 			}
+		} )
+		EventBus.$on( 'io-disconnect', io => {
+			this.disconnectIO( io )
 		} )
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ev => {

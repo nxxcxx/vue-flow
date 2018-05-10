@@ -1,7 +1,9 @@
 <template>
 	<div class="ioRow" :class="{ inputRow: isInput(), outputRow: isOutput() }">
-		<div ref="ioPort" class="ioPort deselected"
-			:class="{ inputPort: isInput(), outputPort: isOutput() }"
+		<div ref="ioPort" class="ioPort"
+			:class="{ inputPort: isInput(), outputPort: isOutput() ,
+				selected: !io.free
+			}"
 		>
 		</div>
 		<div class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }">
@@ -33,7 +35,7 @@ export default {
 	mounted() {
 		this.io.__vue__ = this
 		this.updatePosition()
-		this.$parent.$on( 'update-io-position', ( uuid ) => {
+		this.$parent.$on( 'update-io-position', uuid => {
 			this.updatePosition()
 		} )
 		EventBus.$on( 'vp-zoom', () => {
@@ -45,6 +47,9 @@ export default {
 		} )
 		.on( 'mouseup', ev => {
 			EventBus.$emit( 'io-end-connecting', this.io )
+		} )
+		.on( 'dblclick', ev => {
+			EventBus.$emit( 'io-disconnect', this.io )
 		} )
 	}
 }
@@ -81,14 +86,17 @@ export default {
 		margin-left: 10px
 
 	.inputPort
+		border: 1px solid $w1
+		border-left: 0px
 
-		&.deselected
-			border: 1px solid $g0
+		&.selected
+			border: 1px solid $w1
 			border-left: 0px
+			background: $w1
 
 		&:hover
 			border-left: 0px
-			background: white
+			background: $w1
 
 	.outputRow
 		flex-direction: row-reverse
@@ -97,13 +105,16 @@ export default {
 		margin-right: 10px
 
 	.outputPort
+		border: 1px solid $w1
+		border-right: 0px
 
-		&.deselected
-			border: 1px solid $g0
+		&.selected
+			border: 1px solid $w1
 			border-right: 0px
+			background: $w1
 
 		&:hover
-			background: white
+			background: $w1
 			border-right: 0px
 
 
