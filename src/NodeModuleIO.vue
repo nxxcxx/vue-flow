@@ -23,13 +23,13 @@ export default {
 		isOutput() { return this.type === 'output' },
 		updatePosition() {
 			let port = $( this.$refs.ioPort )
-			, [ hw, hh ] = [ port.width() * 0.5 + 1.0 , port.height() * 0.5 + 1.0 ]
+			, [ woff, hoff ] = [ ( port.width() + 1.0 ) * ( this.io.type === 0 ? 1 : 0 ) , port.height() * 0.5 + 1.0 ]
 			, off = port.offset()
 			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
 			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
 			, mat = this.$parent.$parent.getContainerMatrix()
-			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + hw
-			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hh
+			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + woff
+			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hoff
 		}
 	},
 	mounted() {

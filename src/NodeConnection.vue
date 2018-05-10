@@ -1,7 +1,7 @@
 <template>
 	<path
 		@dblclick="disconnect"
-		style="pointer-events: auto"
+		class="connection"
 		:d="getBezierCurveString()"
 		stroke="#e6e6e6"
 		stroke-width="1.5"
@@ -32,5 +32,10 @@ export default {
 </script>
 
 <style lang="sass">
+	.connection
+		pointer-events: auto
+
+		&:hover
+			stroke: #0bb1f9
 
 </style>
