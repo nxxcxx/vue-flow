@@ -6,7 +6,6 @@
 			@mouseleave="onMouseLeave"
 			class="connectionGhost"
 			:d="getBezierCurveString()"
-			stroke="#363a40"
 			stroke-width="6.0"
 			fill="rgba(0,0,0,0)"
 		/>

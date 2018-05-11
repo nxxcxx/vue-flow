@@ -1,16 +1,23 @@
 <template>
 	<div id="app">
-		<NodeGraph></NodeGraph>
+		<div id="left">
+			<NodeEditor></NodeEditor>
+		</div>
+		<div id="right">
+			<NodeGraph></NodeGraph>
+		</div>
 	</div>
 </template>
 
 <script>
 import NodeGraph from './NodeGraph.vue'
+import NodeEditor from './NodeEditor.vue'
 
 export default {
 	name: 'app',
 	components: {
-		NodeGraph
+		NodeGraph,
+		NodeEditor
 	}
 }
 </script>
@@ -37,4 +44,8 @@ export default {
 		font-size: 12px
 	svg
 		overflow: visible
+	#left
+		width: 30%
+	#right
+		width: 70%
 </style>

@@ -32,6 +32,7 @@ import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
 import SelectionBox from './SelectionBox.vue'
 import importGraphConfiguration from './import.svc.js'
+import toposort from 'toposort'
 
 export default {
 	name: 'app',
@@ -113,8 +114,7 @@ export default {
 			if ( !this.isNodeSelected( node ) ) {
 				this.selectedNodes.push( node )
 			}
-			// bring selected node to front
-			this.nodes = [ ...this.nodes.filter( n => n !== node ), this.nodes[ this.nodes.indexOf( node ) ] ]
+			this.nodes = [ ...this.nodes.filter( n => n !== node ), this.nodes[ this.nodes.indexOf( node ) ] ] // bring selected node to front
 		},
 		isNodeSelected( node ) {
 			return !!this.selectedNodes.find( n => n.uuid === node.uuid )
@@ -123,17 +123,18 @@ export default {
 			return !!this.connections.find( io => io[ 0 ] === opt && io[ 1 ] === inp )
 		},
 		isConnectionCyclic( opt, inp ) {
-			// TODO
+			let testCase = [ ...this.connections, [ opt, inp ] ]
+			try { this.computeToposort( testCase ) }
+			catch( ex ) { return true }
 			return false
+		},
+		computeToposort( conn ) {
+			let edges = []
+			conn.forEach( p => { edges.push( [ p[ 0 ].parent.uuid, p[ 1 ].parent.uuid ] ) } )
+			return toposort( edges )
 		},
 		isConnectionValid( pair ) {
 			let [ opt, inp ] = pair
-			/* validate connection
-				if not null
-				if not same parent
-				if not already exists
-				if valid topological order
-			*/
 			return ( opt !== null && inp !== null &&
 				opt.parent.uuid !== inp.parent.uuid &&
 				!this.isConnectionExists( opt, inp ) &&
@@ -165,10 +166,8 @@ export default {
 	mounted() {
 		this.init()
 		EventBus.$on( 'node-click', ev => {
-			// console.log( 'node-click' )
 		} )
 		EventBus.$on( 'node-mousedown', ev => {
-			// console.log( 'node-mousedown' )
 			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
 			if ( !this.isNodeSelected( ev.node ) ) {
 				if ( ev.shiftKey ) {
@@ -179,10 +178,8 @@ export default {
 			}
 			this.vpd.mouseHoldNode = true
 			this.movingNode = true
-			// console.log( this.selectedNodes )
 		} )
 		EventBus.$on( 'node-mouseup', ev => {
-			// console.log( 'node-mouseup' )
 			this.selectedNodes.forEach( node => {
 				node.__vue__.recordPrevPos()
 			} )
@@ -226,7 +223,6 @@ export default {
 				this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				// console.log( 'root-mouseup' )
 				if ( ev.button !== 1 ) {
 					if ( !ev.shiftKey && !this.movingNode )
 							this.clearSelectedNodes()
@@ -236,6 +232,7 @@ export default {
 							n.__vue__.clearSelecting()
 						}
 					} )
+					EventBus.$emit( 'node-selected', this.selectedNodes )
 				}
 				this.vpd.mouseHoldBg = false
 				this.vpd.middleMouseHold = false
@@ -244,7 +241,6 @@ export default {
 				this.movingNode = false
 				this.ioConnecting = false
 				this.enableConnectionGhost = false
-				// reset connecting io pair
 				this.tempConnectionPair = [ null, null ]
 			} )
 			.on( 'wheel', ev => {
@@ -293,13 +289,14 @@ export default {
 		transform-style: preserve-3d
 		overflow: scroll
 		position: absolute
-		height: 90%
-		width: 80%
-		left: 20%
-		top: 10%
+		height: 100%
+		width: 70%
+		left: 30%
+		top: 0px
 	.nodeGraphContainer
-		background: url( 'assets/grid.png' )
-		background-size: 20px
+		background-color: transparent
+		background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
+		background-size: 50px 50px
 		overflow: visible
 		pointer-events: none
 		position: absolute
@@ -319,8 +316,8 @@ export default {
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 	.nodeGraphBG
-		width: calc( 80% - 15px )
-		height: calc( 90% - 15px )
+		width: calc( 70% - 15px )
+		height: calc( 100% - 15px )
 		position: fixed
 		background: rgba( 0, 0, 0, 0 )
 		pointer-events: auto
