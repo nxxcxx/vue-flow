@@ -1,12 +1,23 @@
 <template>
-	<path
-		@dblclick="disconnect"
-		class="connection"
-		:d="getBezierCurveString()"
-		stroke="#e6e6e6"
-		stroke-width="1.5"
-		fill="rgba(0,0,0,0)"
-	/>
+	<g>
+		<path
+			@dblclick="disconnect"
+			@mouseenter="onMouseEnter"
+			@mouseleave="onMouseLeave"
+			class="connectionGhost"
+			:d="getBezierCurveString()"
+			stroke="#363a40"
+			stroke-width="6.0"
+			fill="rgba(0,0,0,0)"
+		/>
+		<path
+			class="connection"
+			:d="getBezierCurveString()"
+			:stroke="hover ? '#0bb1f9' : '#e6e6e6'"
+			stroke-width="1.5"
+			fill="rgba(0,0,0,0)"
+		/>
+	</g>
 </template>
 
 <script>
@@ -15,6 +26,11 @@ import EventBus from './EventBus.js'
 export default {
 	name: 'NodeConnection',
 	props: [ 'conn' ],
+	data() {
+		return {
+			hover: false
+		}
+	},
 	methods: {
 		getBezierCurveString() {
 			let [ x1, y1 ] = [ this.conn[ 0 ].position.x, this.conn[ 0 ].position.y ]
@@ -25,6 +41,12 @@ export default {
 		},
 		disconnect() {
 			EventBus.$emit( 'io-disconnect', this.conn[ 0 ] )
+		},
+		onMouseEnter() {
+			this.hover = true
+		},
+		onMouseLeave() {
+			this.hover = false
 		}
 	}
 }
@@ -32,9 +54,8 @@ export default {
 
 <style lang="sass">
 	.connection
+		pointer-events: none
+	.connectionGhost
 		pointer-events: auto
-
-		&:hover
-			stroke: #0bb1f9
 
 </style>

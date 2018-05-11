@@ -5,6 +5,11 @@
 
 		<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
+			<svg class="nodeContainerSvg">
+				<line ref="ghostConnection" v-show="enableConnectionGhost"
+					:x1="gx1" :y1="gy1" :x2="gx2" :y2="gy2" stroke="#0bb1f9" />
+				<NodeConnection v-for="( conn, idx ) in connections" :key="idx" :conn="conn"></NodeConnection>
+			</svg>
 			<div class="nodeContainer">
 				<NodeModule v-for="node in nodes" :key="node.uuid"
 					:node="node"
@@ -12,11 +17,6 @@
 				></NodeModule>
 			</div>
 
-			<svg class="nodeContainerSvg">
-				<line ref="ghostConnection" v-show="enableConnectionGhost"
-					:x1="gx1" :y1="gy1" :x2="gx2" :y2="gy2" stroke="#0bb1f9" />
-				<NodeConnection v-for="( conn, idx ) in connections" :key="idx" :conn="conn"></NodeConnection>
-			</svg>
 
 		</div>
 
@@ -109,12 +109,12 @@ export default {
 		},
 		addNodeToSelection( node, clear ) {
 			if ( clear )
-				return this.selectedNodes = [ node ]
-			if ( this.isNodeSelected( node ) ) {
-				// console.log( 'dupe selection' )
-			} else {
+				this.selectedNodes = [ node ]
+			if ( !this.isNodeSelected( node ) ) {
 				this.selectedNodes.push( node )
 			}
+			// bring selected node to front
+			this.nodes = [ ...this.nodes.filter( n => n !== node ), this.nodes[ this.nodes.indexOf( node ) ] ]
 		},
 		isNodeSelected( node ) {
 			return !!this.selectedNodes.find( n => n.uuid === node.uuid )

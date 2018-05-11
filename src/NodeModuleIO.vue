@@ -23,7 +23,7 @@ export default {
 		isOutput() { return this.type === 'output' },
 		updatePosition() {
 			let port = $( this.$refs.ioPort )
-			, [ woff, hoff ] = [ ( port.width() + 1.0 ) * ( this.io.type === 0 ? 1 : 0 ) , port.height() * 0.5 + 1.0 ]
+			, [ woff, hoff ] = [ ( port.width() + 1.0 ) * ( this.io.type === 0 ? 1 : 0 ) , port.height() * 0.5 + 0.5 ]
 			, off = port.offset()
 			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
 			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
@@ -86,16 +86,12 @@ export default {
 		margin-left: 10px
 
 	.inputPort
-		border: 1px solid $w1
-		border-left: 0px
+		background: $g0
 
 		&.selected
-			border: 1px solid $w1
-			border-left: 0px
 			background: $w1
 
 		&:hover
-			border-left: 0px
 			background: $w1
 
 	.outputRow
@@ -105,17 +101,13 @@ export default {
 		margin-right: 10px
 
 	.outputPort
-		border: 1px solid $w1
-		border-right: 0px
+		background: $g0
 
 		&.selected
-			border: 1px solid $w1
-			border-right: 0px
 			background: $w1
 
 		&:hover
 			background: $w1
-			border-right: 0px
 
 
 	.ioHover
