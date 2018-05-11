@@ -24,7 +24,6 @@ export default {
 			return `M${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`
 		},
 		disconnect() {
-			console.log( 'dd' )
 			EventBus.$emit( 'io-disconnect', this.conn[ 0 ] )
 		}
 	}

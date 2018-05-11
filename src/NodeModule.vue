@@ -93,7 +93,7 @@ export default {
 		&.selected
 			border: 1px solid $b0
 	.header
-		padding: 0px 4px
+		padding: 0px 4px 2px 4px
 	.ioContainer
 		display: flex
 		justify-content: space-between
