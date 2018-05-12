@@ -27,6 +27,7 @@ import NodeModuleIO from './NodeModuleIO.vue'
 export default {
 	name: 'NodeModule',
 	components: { NodeModuleIO },
+	inject: [ '$EventBus' ],
 	props: [ 'node', 'selected' ],
 	data() {
 		return {
@@ -56,6 +57,7 @@ export default {
 	},
 	created() {
 		this.node.__vue__ = this
+		console.log( this.$EventBus )
 	},
 	mounted() {
 		$( this.$refs.nodeModule )

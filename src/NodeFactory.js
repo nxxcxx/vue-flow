@@ -54,9 +54,6 @@ class Executable {
 		this._fnstr = ''
 		this._parseTask = null
 		this._initialized = false
-		// this.init = () => {}
-		// this.process = () => {}
-		// this.flush = () => {}
 		this.scope = {
 			init: () => {},
 			process: () => {},
@@ -65,22 +62,17 @@ class Executable {
 	}
 	_init( inputObj, injectObj ) {
 		if ( this._initialized ) return
-		// this.init( inputObj, injectObj )
 		this.scope.init.call( this.scope, inputObj, injectObj )
 		this._initialized = true
 	}
 	parse() {
 		try {
-			// this.init = () => {}
-			// this.process = () => {}
-			// this.flush = () => {}
 			this.scope = {
 				init: () => {},
 				process: () => {},
 				flush: () => {}
 			}
 			this._parseTask = new Function( this._fnstr )
-			// this._parseTask()
 			this._parseTask.call( this.scope )
 			this._initialized = false
 		} catch ( ex ) {
@@ -92,8 +84,6 @@ class Executable {
 		let inpObj = {}
 		this.input.forEach( inp => { inpObj[ inp.name ] = inp.retrieveData() } )
 		try {
-			// this._init.call( this, inpObj, injectObj )
-			// res = this.process.call( this, inpObj, injectObj )
 			this._init( inpObj, injectObj )
 			res = this.scope.process.call( this.scope, inpObj, injectObj )
 		} catch ( ex ) {

@@ -10,7 +10,12 @@
 			<NodeEditor></NodeEditor>
 		</div>
 		<div id="right">
-			<NodeGraph></NodeGraph>
+			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
+				<NodeGraph></NodeGraph>
+			</div>
+			<div style="position: relative; width: 100%; height: 50%; background: #4b5d53; top: 0px; left: 0px">
+				<NodeGraph></NodeGraph>
+			</div>
 		</div>
 	</div>
 </template>

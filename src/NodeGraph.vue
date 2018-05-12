@@ -25,6 +25,7 @@
 
 <script>
 
+import Vue from 'vue'
 import EventBus from './EventBus.js'
 import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
@@ -36,6 +37,11 @@ import toposort from 'toposort'
 export default {
 	name: 'app',
 	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
+	provide() {
+		return {
+			$EventBus: new Vue()
+		}
+	},
 	data() {
 		return {
 			nodes: [],
@@ -177,12 +183,8 @@ export default {
 			this.movingNode = true
 		} )
 		EventBus.$on( 'node-mouseup', ev => {
-			this.selectedNodes.forEach( node => {
-				node.__vue__.recordPrevPos()
-			} )
-			this.nodes.forEach( n => {
-				n.__vue__.$emit( 'update-io-position' )
-			} )
+			this.selectedNodes.forEach( n => n.__vue__.recordPrevPos() )
+			this.nodes.forEach( n => n.__vue__.$emit( 'update-io-position' ) )
 		} )
 		EventBus.$on( 'io-start-connecting', io => {
 			this.ioConnecting = true
@@ -275,8 +277,8 @@ export default {
 					this.movingNode &&
 					!this.ioConnecting
 				) {
-					this.selectedNodes.forEach( node => {
-						node.__vue__.moveByUnit( dx, dy )
+					this.selectedNodes.forEach( n => {
+						n.__vue__.moveByUnit( dx, dy )
 					} )
 				}
 
