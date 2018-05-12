@@ -44,6 +44,9 @@ export default {
 				cm.doc.setValue( `<< ${nodes.length} NODES SELECTED >>` )
 				cm.doc.clearHistory()
 				cm.setOption( 'readOnly', true )
+			} else {
+				this.selectedNodes = []
+				cm.doc.setValue( '' )
 			}
 		} )
 		EventBus.$on( 'node-clear-selected', () => {
