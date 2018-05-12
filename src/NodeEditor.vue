@@ -41,7 +41,7 @@ export default {
 				cm.doc.clearHistory()
 				cm.setOption( 'readOnly', false )
 			} else if ( nodes.length > 1 ) {
-				cm.doc.setValue( '<< MULTIPLE NODES SELECTED >>' )
+				cm.doc.setValue( `<< ${nodes.length} NODES SELECTED >>` )
 				cm.doc.clearHistory()
 				cm.setOption( 'readOnly', true )
 			}
@@ -57,4 +57,12 @@ export default {
 </script>
 
 <style lang="sass">
+	.cm-s-material.CodeMirror
+		background: #151617
+	.cm-s-material .CodeMirror-gutters
+		background: #111213
+	.cm-s-material .CodeMirror-linenumber
+		color: #d0d0d0
+	.CodeMirror div.CodeMirror-cursor
+		background: rgba(#f1f1f1, 0.5)
 </style>

@@ -1,11 +1,13 @@
 <template>
 	<div id="app">
 		<div id="left">
-			<NodeEditor></NodeEditor>
-			{{ selectedNodes.length }}
 			<div v-if="selectedNodes.length === 1">
-				{{ selectedNodes[ 0 ].uuid }}
+				[{{ selectedNodes[ 0 ].name }}]
 			</div>
+			<div v-if="selectedNodes.length !== 1">
+				[]
+			</div>
+			<NodeEditor></NodeEditor>
 		</div>
 		<div id="right">
 			<NodeGraph></NodeGraph>
@@ -33,6 +35,9 @@ export default {
 	mounted() {
 		EventBus.$on( 'node-selected', nodes => {
 			this.selectedNodes = nodes
+		} )
+		EventBus.$on( 'node-clear-selected', () => {
+			this.selectedNodes = []
 		} )
 	}
 }
@@ -75,8 +80,8 @@ export default {
 	::-webkit-scrollbar
 		background: $dz
 		border-right: 1px solid $w1
-		width: 10px
-		height: 10px
+		width: 5px
+		height: 5px
 	::-webkit-scrollbar-track
 		background: $dz
 	::-webkit-scrollbar-thumb

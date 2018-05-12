@@ -16,7 +16,6 @@
 				></NodeModule>
 			</div>
 
-
 		</div>
 
 		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
@@ -48,7 +47,6 @@ export default {
 				zoomFactor: 1.0,
 				prevMouse: { x: 0, y: 0 },
 				mouseHoldBg: false,
-				mouseHoldNode: false,
 				middleMouseHold: false,
 				currentSelectedNode: null,
 			},
@@ -78,10 +76,10 @@ export default {
 				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.vpd.zoomFactor
 			}
 		},
-		pan( delta ) {
+		pan( dx, dy ) {
 			let vp = $( this.$refs.nodeGraphRoot )
-			vp.scrollLeft( vp.scrollLeft() - delta.x )
-			vp.scrollTop( vp.scrollTop() - delta.y )
+			vp.scrollLeft( vp.scrollLeft() - dx )
+			vp.scrollTop( vp.scrollTop() - dy )
 		},
 		zoom( anchor, delta ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
@@ -166,15 +164,16 @@ export default {
 		this.init()
 		EventBus.$on( 'node-click', ev => {
 		} )
-		EventBus.$on( 'node-mousedown', ev => {
+		EventBus.$on( 'node-mousedown', payload => {
 			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
-			if ( ev.shiftKey ) {
-				this.addNodeToSelection( ev.node )
-			} else {
-				this.addNodeToSelection( ev.node, true )
+			if ( payload.event.shiftKey ) {
+				this.addNodeToSelection( payload.node )
+			} else if ( payload.event.ctrlKey ) {
+				this.removeNodeFromSelection( payload.node )
+			} else if ( !this.isNodeSelected( payload.node ) ) {
+				this.addNodeToSelection( payload.node, true )
 			}
 			EventBus.$emit( 'node-selected', this.selectedNodes )
-			this.vpd.mouseHoldNode = true
 			this.movingNode = true
 		} )
 		EventBus.$on( 'node-mouseup', ev => {
@@ -193,10 +192,8 @@ export default {
 			EventBus.$emit( 'ghost-connection-disable' )
 			this.ioConnecting = false
 			this.tempConnectionPair[ io.type ] = io
-			if ( this.isConnectionValid( this.tempConnectionPair ) ) {
-				console.log( this.tempConnectionPair )
+			if ( this.isConnectionValid( this.tempConnectionPair ) )
 				this.connectIO( ...this.tempConnectionPair )
-			}
 		} )
 		EventBus.$on( 'io-disconnect', io => {
 			this.disconnectIO( io )
@@ -211,6 +208,7 @@ export default {
 				ev.preventDefault()
 			} )
 			.on( 'mousedown', ev => {
+				if ( ev.button === 0 ) this.leftMouseHold = true
 				if ( ev.button === 1 ) {
 					ev.preventDefault()
 					this.vpd.middleMouseHold = true
@@ -218,7 +216,7 @@ export default {
 				this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				if ( ev.button !== 1 ) {
+				if ( ev.button !== 1 && this.leftMouseHold ) {
 					let selecting = this.nodes.filter( n => n.__vue__.selecting )
 					if ( !this.movingNode ) {
 						if ( selecting.length > 0 ) {
@@ -245,10 +243,10 @@ export default {
 						}
 					}
 				}
+				this.leftMouseHold = false
 				this.vpd.mouseHoldBg = false
 				this.vpd.middleMouseHold = false
 				this.enableSelectionBox = false
-				this.vpd.mouseHoldNode = false
 				this.movingNode = false
 				this.ioConnecting = false
 				this.tempConnectionPair = [ null, null ]
@@ -257,29 +255,24 @@ export default {
 			.on( 'wheel', ev => {
 				ev.preventDefault()
 				let vp = $( this.$refs.nodeGraphRoot )
-				let off = vp.offset()
 				let anchor = {
-					x: ev.clientX - off.left + vp.scrollLeft(),
-					y: ev.clientY - off.top + vp.scrollTop()
+					x: ev.clientX - vp.offset().left + vp.scrollLeft(),
+					y: ev.clientY - vp.offset().top + vp.scrollTop()
 				}
 				this.zoom( anchor, ev.originalEvent.deltaY )
 			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'mousemove', ev => {
-
 				let rm = this.getMousePositionRelative( ev )
 				EventBus.$emit( 'ghost-connection-update', rm )
-
 				let [ dx, dy ] = [ ev.clientX - this.vpd.prevMouse.x, ev.clientY - this.vpd.prevMouse.y ]
-
 				if ( this.vpd.middleMouseHold ) {
-					this.pan( { x: dx, y: dy } )
+					this.pan( dx, dy )
 					this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
 				}
-
 				if ( !this.vpd.middleMouseHold  &&
 					this.selectedNodes.length > 0 &&
-					this.vpd.mouseHoldNode &&
+					this.movingNode &&
 					!this.ioConnecting
 				) {
 					this.selectedNodes.forEach( node => {

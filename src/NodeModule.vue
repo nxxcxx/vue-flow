@@ -67,7 +67,7 @@ export default {
 				this.recordPrevPos()
 				EventBus.$emit( 'node-mousedown', {
 					node: this.node,
-					shiftKey: ev.shiftKey
+					event: ev
 				} )
 			} )
 			.on( 'mouseup', ev => {
@@ -81,7 +81,7 @@ export default {
 	$d0: rgb(24,26,28)
 	$b0: #0bb1f9
 	$w1: #e6e6e6
-	$r0: #ff6b00
+	$r0: #777777
 	.nodeModule
 		position: absolute
 		padding: 4px 0px 4px 0px
