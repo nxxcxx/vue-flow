@@ -59,6 +59,9 @@ export default {
 	},
 	mounted() {
 		$( this.$refs.nodeModule )
+			.on( 'click', ev => {
+				EventBus.$emit( 'node-click', ev )
+			} )
 			.on( 'mousedown', ev => {
 				if ( ev.button !== 0 ) return
 				this.recordPrevPos()
@@ -78,7 +81,7 @@ export default {
 	$d0: rgb(24,26,28)
 	$b0: #0bb1f9
 	$w1: #e6e6e6
-	$r0: #0bb1f9
+	$r0: #ff6b00
 	.nodeModule
 		position: absolute
 		padding: 4px 0px 4px 0px

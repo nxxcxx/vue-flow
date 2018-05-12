@@ -6,8 +6,7 @@
 		<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
 			<svg class="nodeContainerSvg">
-				<line ref="ghostConnection" v-show="enableConnectionGhost"
-					:x1="gx1" :y1="gy1" :x2="gx2" :y2="gy2" stroke="#0bb1f9" />
+				<NodeGhostConnection></NodeGhostConnection>
 				<NodeConnection v-for="( conn, idx ) in connections" :key="idx" :conn="conn"></NodeConnection>
 			</svg>
 			<div class="nodeContainer">
@@ -30,13 +29,14 @@
 import EventBus from './EventBus.js'
 import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
+import NodeGhostConnection from './NodeGhostConnection.vue'
 import SelectionBox from './SelectionBox.vue'
 import importGraphConfiguration from './import.svc.js'
 import toposort from 'toposort'
 
 export default {
 	name: 'app',
-	components: { NodeModule, NodeConnection, SelectionBox },
+	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
 	data() {
 		return {
 			nodes: [],
@@ -52,12 +52,7 @@ export default {
 				middleMouseHold: false,
 				currentSelectedNode: null,
 			},
-			gx1: 0,
-			gy1: 0,
-			gx2: 100,
-			gy2: 100,
 			enableSelectionBox: false,
-			enableConnectionGhost: false,
 		}
 	},
 	methods: {
@@ -107,6 +102,7 @@ export default {
 		},
 		clearSelectedNodes() {
 			this.selectedNodes = []
+			EventBus.$emit( 'node-clear-selected' )
 		},
 		addNodeToSelection( node, clear ) {
 			if ( clear )
@@ -128,9 +124,9 @@ export default {
 			catch( ex ) { return true }
 			return false
 		},
-		computeToposort( conn ) {
+		computeToposort( connections ) {
 			let edges = []
-			conn.forEach( p => { edges.push( [ p[ 0 ].parent.uuid, p[ 1 ].parent.uuid ] ) } )
+			connections.forEach( p => { edges.push( [ p[ 0 ].parent.uuid, p[ 1 ].parent.uuid ] ) } )
 			return toposort( edges )
 		},
 		isConnectionValid( pair ) {
@@ -169,13 +165,12 @@ export default {
 		} )
 		EventBus.$on( 'node-mousedown', ev => {
 			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
-			if ( !this.isNodeSelected( ev.node ) ) {
-				if ( ev.shiftKey ) {
-					this.addNodeToSelection( ev.node )
-				} else {
-					this.addNodeToSelection( ev.node, true )
-				}
+			if ( ev.shiftKey ) {
+				this.addNodeToSelection( ev.node )
+			} else {
+				this.addNodeToSelection( ev.node, true )
 			}
+			EventBus.$emit( 'node-selected', this.selectedNodes )
 			this.vpd.mouseHoldNode = true
 			this.movingNode = true
 		} )
@@ -189,14 +184,11 @@ export default {
 		} )
 		EventBus.$on( 'io-start-connecting', io => {
 			this.ioConnecting = true
-			this.enableConnectionGhost = true
 			this.tempConnectionPair[ io.type ] = io
-			this.gx1 = io.position.x
-			this.gy1 = io.position.y
 		} )
 		EventBus.$on( 'io-end-connecting', io => {
+			EventBus.$emit( 'ghost-connection-disable' )
 			this.ioConnecting = false
-			this.enableConnectionGhost = false
 			this.tempConnectionPair[ io.type ] = io
 			if ( this.isConnectionValid( this.tempConnectionPair ) ) {
 				console.log( this.tempConnectionPair )
@@ -224,15 +216,28 @@ export default {
 			} )
 			.on( 'mouseup', ev => {
 				if ( ev.button !== 1 ) {
-					if ( !ev.shiftKey && !this.movingNode )
+					let selecting = this.nodes.filter( n => n.__vue__.selecting )
+					if ( !this.movingNode ) {
+						if ( selecting.length > 0 ) {
+							if ( ev.shiftKey ) {
+								selecting.forEach( n => {
+									this.addNodeToSelection( n )
+									n.__vue__.clearSelecting()
+								} )
+							} else if ( ev.ctrlKey ) {
+								// this.removeNodeFromSelection( n )
+							} else {
+								this.clearSelectedNodes()
+								selecting.forEach( n => {
+									this.addNodeToSelection( n )
+									n.__vue__.clearSelecting()
+								} )
+							}
+							EventBus.$emit( 'node-selected', this.selectedNodes )
+						} else {
 							this.clearSelectedNodes()
-					this.nodes.forEach( n => {
-						if ( n.__vue__.selecting ) {
-							this.addNodeToSelection( n )
-							n.__vue__.clearSelecting()
 						}
-					} )
-					EventBus.$emit( 'node-selected', this.selectedNodes )
+					}
 				}
 				this.vpd.mouseHoldBg = false
 				this.vpd.middleMouseHold = false
@@ -240,8 +245,8 @@ export default {
 				this.vpd.mouseHoldNode = false
 				this.movingNode = false
 				this.ioConnecting = false
-				this.enableConnectionGhost = false
 				this.tempConnectionPair = [ null, null ]
+				EventBus.$emit( 'ghost-connection-disable' )
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -257,8 +262,7 @@ export default {
 			.on( 'mousemove', ev => {
 
 				let rm = this.getMousePositionRelative( ev )
-				this.gx2 = rm.x
-				this.gy2 = rm.y
+				EventBus.$emit( 'ghost-connection-update', rm )
 
 				let [ dx, dy ] = [ ev.clientX - this.vpd.prevMouse.x, ev.clientY - this.vpd.prevMouse.y ]
 
@@ -290,8 +294,8 @@ export default {
 		overflow: scroll
 		position: absolute
 		height: 100%
-		width: 70%
-		left: 30%
+		width: 100%
+		left: 0px
 		top: 0px
 	.nodeGraphContainer
 		background-color: transparent

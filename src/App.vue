@@ -2,6 +2,10 @@
 	<div id="app">
 		<div id="left">
 			<NodeEditor></NodeEditor>
+			{{ selectedNodes.length }}
+			<div v-if="selectedNodes.length === 1">
+				{{ selectedNodes[ 0 ].uuid }}
+			</div>
 		</div>
 		<div id="right">
 			<NodeGraph></NodeGraph>
@@ -10,14 +14,26 @@
 </template>
 
 <script>
+import EventBus from './EventBus.js'
 import NodeGraph from './NodeGraph.vue'
 import NodeEditor from './NodeEditor.vue'
+import CircularJSON from 'circular-json'
 
 export default {
 	name: 'app',
 	components: {
 		NodeGraph,
 		NodeEditor
+	},
+	data() {
+		return {
+			selectedNodes: []
+		}
+	},
+	mounted() {
+		EventBus.$on( 'node-selected', nodes => {
+			this.selectedNodes = nodes
+		} )
 	}
 }
 </script>
@@ -45,7 +61,24 @@ export default {
 	svg
 		overflow: visible
 	#left
+		position: absolute
 		width: 30%
+		height: 100%
+		border-right: 2px solid $dz
+		z-index: 10
 	#right
+		position: absolute
 		width: 70%
+		height: 100%
+		left: 30%
+		// box-shadow: inset 3px 0px #008cff
+	::-webkit-scrollbar
+		background: $dz
+		border-right: 1px solid $w1
+		width: 10px
+		height: 10px
+	::-webkit-scrollbar-track
+		background: $dz
+	::-webkit-scrollbar-thumb
+		background: $w1
 </style>

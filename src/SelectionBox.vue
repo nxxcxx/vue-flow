@@ -83,9 +83,6 @@ export default {
 			function doRectIntersect( r1, r2 ) {
 				return !( r2.l > r1.r || r2.r < r1.l || r2.t > r1.b || r2.b < r1.t )
 			}
-		},
-		deselect() {
-			this.$parent.clearSelectedNodes()
 		}
 	}
 }
