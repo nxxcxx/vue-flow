@@ -32,17 +32,15 @@ export default {
 		cm.on( 'change', cm => {
 			if ( this.selectedNodes.length === 1 ) {
 				this.selectedNodes[ 0 ]._fnstr = cm.doc.getValue()
-				console.log( 'save' )
 			}
 		} )
 		EventBus.$on( 'node-selected', nodes => {
-			console.log( nodes )
 			if ( nodes.length === 1 ) {
 				this.selectedNodes = nodes
 				cm.doc.setValue( nodes[ 0 ]._fnstr )
 				cm.doc.clearHistory()
 				cm.setOption( 'readOnly', false )
-			} else {
+			} else if ( nodes.length > 1 ) {
 				cm.doc.setValue( '<< MULTIPLE NODES SELECTED >>' )
 				cm.doc.clearHistory()
 				cm.setOption( 'readOnly', true )
@@ -51,7 +49,6 @@ export default {
 		EventBus.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 			cm.doc.setValue( '' )
-			console.log( 'cc' )
 		} )
 	},
 	methods: {

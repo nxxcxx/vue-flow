@@ -112,6 +112,9 @@ export default {
 			}
 			this.nodes = [ ...this.nodes.filter( n => n !== node ), this.nodes[ this.nodes.indexOf( node ) ] ] // bring selected node to front
 		},
+		removeNodeFromSelection( node ) {
+			this.selectedNodes = this.selectedNodes.filter( n => n !== node )
+		},
 		isNodeSelected( node ) {
 			return !!this.selectedNodes.find( n => n.uuid === node.uuid )
 		},
@@ -225,7 +228,10 @@ export default {
 									n.__vue__.clearSelecting()
 								} )
 							} else if ( ev.ctrlKey ) {
-								// this.removeNodeFromSelection( n )
+								selecting.forEach( n => {
+									this.removeNodeFromSelection( n )
+									n.__vue__.clearSelecting()
+								} )
 							} else {
 								this.clearSelectedNodes()
 								selecting.forEach( n => {
