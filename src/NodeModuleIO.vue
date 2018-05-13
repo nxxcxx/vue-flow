@@ -1,8 +1,8 @@
 <template>
 	<div class="ioRow" :class="{ inputRow: isInput(), outputRow: isOutput() }">
 		<div ref="ioPort" class="ioPort"
-			:class="{ inputPort: isInput(), outputPort: isOutput() ,
-				selected: !io.free
+			:class="{ inputPort: isInput(), outputPort: isOutput(),
+				connected: !io.free && !selected, selected: selected
 			}"
 		>
 		</div>
@@ -13,11 +13,15 @@
 </template>
 
 <script>
-import EventBus from './EventBus.js'
-
 export default {
 	name: 'NodeModuleIO',
+	inject: [ '$EventBus' ],
 	props: [ 'type', 'io' ],
+	data() {
+		return {
+			selected: false,
+		}
+	},
 	methods: {
 		isInput() { return this.type === 'input' },
 		isOutput() { return this.type === 'output' },
@@ -30,26 +34,35 @@ export default {
 			, mat = this.$parent.$parent.getContainerMatrix()
 			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + woff
 			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hoff
-		}
+		},
+	},
+	created() {
+		this.io.__vue__ = this
 	},
 	mounted() {
-		this.io.__vue__ = this
 		this.updatePosition()
 		this.$parent.$on( 'update-io-position', uuid => {
 			this.updatePosition()
 		} )
-		EventBus.$on( 'vp-zoom', () => {
+		this.$EventBus.$on( 'vp-zoom', () => {
 			this.updatePosition()
 		} )
 		$( this.$refs.ioPort )
 		.on( 'mousedown', ev => {
-			EventBus.$emit( 'io-start-connecting', this.io )
+			this.$EventBus.$emit( 'io-start-connecting', this.io )
+			this.selected = true
 		} )
 		.on( 'mouseup', ev => {
-			EventBus.$emit( 'io-end-connecting', this.io )
+			this.$EventBus.$emit( 'io-end-connecting', this.io )
 		} )
 		.on( 'dblclick', ev => {
-			EventBus.$emit( 'io-disconnect', this.io )
+			this.$EventBus.$emit( 'io-disconnect', this.io )
+		} )
+		.on( 'mouseenter', ev => {
+			if ( !this.io.free ) this.selected = true
+		} )
+		.on( 'mouseleave', ev => {
+			this.selected = false
 		} )
 	}
 }
@@ -89,9 +102,9 @@ export default {
 		background: $g0
 
 		&.selected
-			background: $w1
+			background: $b0
 
-		&:hover
+		&.connected
 			background: $w1
 
 	.outputRow
@@ -104,12 +117,16 @@ export default {
 		background: $g0
 
 		&.selected
-			background: $w1
+			background: $b0
 
-		&:hover
+		&.connected
 			background: $w1
-
 
 	.ioHover
 		background: $w1
+
+	.active
+		background: $b0
+
+
 </style>

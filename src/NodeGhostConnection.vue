@@ -7,10 +7,9 @@
 </template>
 
 <script>
-import EventBus from './EventBus.js'
-
 export default {
 	name: 'NodeGhostConnection',
+	inject: [ '$EventBus' ],
 	data() {
 		return {
 			enable: false,
@@ -23,15 +22,15 @@ export default {
 	methods: {
 	},
 	mounted() {
-		EventBus.$on( 'io-start-connecting', io => {
+		this.$EventBus.$on( 'io-start-connecting', io => {
 			this.enable = true
 			this.x1 = io.position.x
 			this.y1 = io.position.y
 		} )
-		EventBus.$on( 'ghost-connection-disable', io => {
+		this.$EventBus.$on( 'ghost-connection-disable', io => {
 			this.enable = false
 		} )
-		EventBus.$on( 'ghost-connection-update', pos => {
+		this.$EventBus.$on( 'ghost-connection-update', pos => {
 			this.x2 = pos.x
 			this.y2 = pos.y
 		} )

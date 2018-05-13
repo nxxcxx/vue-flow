@@ -13,7 +13,7 @@
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph></NodeGraph>
 			</div>
-			<div style="position: relative; width: 100%; height: 50%; background: #4b5d53; top: 0px; left: 0px">
+			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph></NodeGraph>
 			</div>
 		</div>
@@ -21,7 +21,6 @@
 </template>
 
 <script>
-import EventBus from './EventBus.js'
 import NodeGraph from './NodeGraph.vue'
 import NodeEditor from './NodeEditor.vue'
 import CircularJSON from 'circular-json'
@@ -38,10 +37,10 @@ export default {
 		}
 	},
 	mounted() {
-		EventBus.$on( 'node-selected', nodes => {
+		this.$root.$on( 'node-selected', nodes => {
 			this.selectedNodes = nodes
 		} )
-		EventBus.$on( 'node-clear-selected', () => {
+		this.$root.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 		} )
 	}

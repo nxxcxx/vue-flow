@@ -17,11 +17,11 @@
 				<NodeModuleIO v-for="output of node.output" :key="output.uuid" :io="output" type="output"></NodeModuleIO>
 			</div>
 		</div>
+
 	</div>
 </template>
 
 <script>
-import EventBus from './EventBus.js'
 import NodeModuleIO from './NodeModuleIO.vue'
 
 export default {
@@ -57,23 +57,22 @@ export default {
 	},
 	created() {
 		this.node.__vue__ = this
-		console.log( this.$EventBus )
 	},
 	mounted() {
 		$( this.$refs.nodeModule )
 			.on( 'click', ev => {
-				EventBus.$emit( 'node-click', ev )
+				this.$EventBus.$emit( 'node-click', ev )
 			} )
 			.on( 'mousedown', ev => {
 				if ( ev.button !== 0 ) return
 				this.recordPrevPos()
-				EventBus.$emit( 'node-mousedown', {
+				this.$EventBus.$emit( 'node-mousedown', {
 					node: this.node,
 					event: ev
 				} )
 			} )
 			.on( 'mouseup', ev => {
-				EventBus.$emit( 'node-mouseup' )
+				this.$EventBus.$emit( 'node-mouseup' )
 			} )
 	}
 }

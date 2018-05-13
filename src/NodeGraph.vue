@@ -7,7 +7,7 @@
 
 			<svg class="nodeContainerSvg">
 				<NodeGhostConnection></NodeGhostConnection>
-				<NodeConnection v-for="( conn, idx ) in connections" :key="idx" :conn="conn"></NodeConnection>
+				<NodeConnection v-for="conn in connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
 			</svg>
 			<div class="nodeContainer">
 				<NodeModule v-for="node in nodes" :key="node.uuid"
@@ -26,7 +26,6 @@
 <script>
 
 import Vue from 'vue'
-import EventBus from './EventBus.js'
 import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
 import NodeGhostConnection from './NodeGhostConnection.vue'
@@ -35,7 +34,7 @@ import importGraphConfiguration from './import.svc.js'
 import toposort from 'toposort'
 
 export default {
-	name: 'app',
+	name: 'NodeGraph',
 	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
 	provide() {
 		return {
@@ -61,7 +60,6 @@ export default {
 	},
 	methods: {
 		init() {
-			$( this.$refs.nodeGraphRoot ).animate( { scrollTop: 2000, scrollLeft: 2000 }, 0 )
 			this.nodes.forEach( n => {
 				n.__vue__.moveByUnit( n.position.x, n.position.y )
 				n.__vue__.recordPrevPos()
@@ -97,7 +95,7 @@ export default {
 			, yy = sd * ( mat[ 5 ] - anchor.y ) + anchor.y
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
 			this.vpd.zoomFactor = sf
-			EventBus.$emit( 'vp-zoom' )
+			this.$EventBus.$emit( 'vp-zoom' )
 		},
 		importGraph() {
 			let graph = importGraphConfiguration()
@@ -106,7 +104,7 @@ export default {
 		},
 		clearSelectedNodes() {
 			this.selectedNodes = []
-			EventBus.$emit( 'node-clear-selected' )
+			this.$root.$emit( 'node-clear-selected' )
 		},
 		addNodeToSelection( node, clear ) {
 			if ( clear )
@@ -165,12 +163,13 @@ export default {
 	},
 	created() {
 		this.importGraph()
+		this.$EventBus = this._provided.$EventBus
 	},
 	mounted() {
 		this.init()
-		EventBus.$on( 'node-click', ev => {
+		this.$EventBus.$on( 'node-click', ev => {
 		} )
-		EventBus.$on( 'node-mousedown', payload => {
+		this.$EventBus.$on( 'node-mousedown', payload => {
 			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
 			if ( payload.event.shiftKey ) {
 				this.addNodeToSelection( payload.node )
@@ -179,25 +178,25 @@ export default {
 			} else if ( !this.isNodeSelected( payload.node ) ) {
 				this.addNodeToSelection( payload.node, true )
 			}
-			EventBus.$emit( 'node-selected', this.selectedNodes )
+			this.$root.$emit( 'node-selected', this.selectedNodes )
 			this.movingNode = true
 		} )
-		EventBus.$on( 'node-mouseup', ev => {
+		this.$EventBus.$on( 'node-mouseup', ev => {
 			this.selectedNodes.forEach( n => n.__vue__.recordPrevPos() )
 			this.nodes.forEach( n => n.__vue__.$emit( 'update-io-position' ) )
 		} )
-		EventBus.$on( 'io-start-connecting', io => {
+		this.$EventBus.$on( 'io-start-connecting', io => {
 			this.ioConnecting = true
 			this.tempConnectionPair[ io.type ] = io
 		} )
-		EventBus.$on( 'io-end-connecting', io => {
-			EventBus.$emit( 'ghost-connection-disable' )
+		this.$EventBus.$on( 'io-end-connecting', io => {
+			this.$EventBus.$emit( 'ghost-connection-disable' )
 			this.ioConnecting = false
 			this.tempConnectionPair[ io.type ] = io
 			if ( this.isConnectionValid( this.tempConnectionPair ) )
 				this.connectIO( ...this.tempConnectionPair )
 		} )
-		EventBus.$on( 'io-disconnect', io => {
+		this.$EventBus.$on( 'io-disconnect', io => {
 			this.disconnectIO( io )
 		} )
 		$( this.$refs.nodeGraphBG )
@@ -239,12 +238,14 @@ export default {
 									n.__vue__.clearSelecting()
 								} )
 							}
-							EventBus.$emit( 'node-selected', this.selectedNodes )
+							this.$root.$emit( 'node-selected', this.selectedNodes )
 						} else {
 							this.clearSelectedNodes()
 						}
 					}
 				}
+				if ( this.tempConnectionPair[ 0 ] ) this.tempConnectionPair[ 0 ].__vue__.selected = false
+				if ( this.tempConnectionPair[ 1 ] ) this.tempConnectionPair[ 1 ].__vue__.selected = false
 				this.leftMouseHold = false
 				this.vpd.mouseHoldBg = false
 				this.vpd.middleMouseHold = false
@@ -252,7 +253,7 @@ export default {
 				this.movingNode = false
 				this.ioConnecting = false
 				this.tempConnectionPair = [ null, null ]
-				EventBus.$emit( 'ghost-connection-disable' )
+				this.$EventBus.$emit( 'ghost-connection-disable' )
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -266,7 +267,7 @@ export default {
 		$( this.$refs.nodeGraphRoot )
 			.on( 'mousemove', ev => {
 				let rm = this.getMousePositionRelative( ev )
-				EventBus.$emit( 'ghost-connection-update', rm )
+				this.$EventBus.$emit( 'ghost-connection-update', rm )
 				let [ dx, dy ] = [ ev.clientX - this.vpd.prevMouse.x, ev.clientY - this.vpd.prevMouse.y ]
 				if ( this.vpd.middleMouseHold ) {
 					this.pan( dx, dy )

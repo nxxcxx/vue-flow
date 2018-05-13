@@ -20,10 +20,9 @@
 </template>
 
 <script>
-import EventBus from './EventBus.js'
-
 export default {
 	name: 'NodeConnection',
+	inject: [ '$EventBus' ],
 	props: [ 'conn' ],
 	data() {
 		return {
@@ -39,14 +38,22 @@ export default {
 			return `M${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`
 		},
 		disconnect() {
-			EventBus.$emit( 'io-disconnect', this.conn[ 0 ] )
+			this.$EventBus.$emit( 'io-disconnect', this.conn[ 1 ] )
 		},
 		onMouseEnter() {
 			this.hover = true
+			this.conn[ 0 ].__vue__.selected = true
+			this.conn[ 1 ].__vue__.selected = true
 		},
 		onMouseLeave() {
 			this.hover = false
+			this.conn[ 0 ].__vue__.selected = false
+			this.conn[ 1 ].__vue__.selected = false
 		}
+	},
+	beforeDestroy() {
+		this.conn[ 0 ].__vue__.selected = false
+		this.conn[ 1 ].__vue__.selected = false
 	}
 }
 </script>

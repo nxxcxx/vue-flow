@@ -5,7 +5,6 @@
 </template>
 
 <script>
-import EventBus from './EventBus.js'
 import CodeMirror from 'codemirror'
 import 'root/node_modules/codemirror/mode/javascript/javascript.js'
 import 'root/node_modules/codemirror/keymap/vim.js'
@@ -34,7 +33,7 @@ export default {
 				this.selectedNodes[ 0 ]._fnstr = cm.doc.getValue()
 			}
 		} )
-		EventBus.$on( 'node-selected', nodes => {
+		this.$root.$on( 'node-selected', nodes => {
 			if ( nodes.length === 1 ) {
 				this.selectedNodes = nodes
 				cm.doc.setValue( nodes[ 0 ]._fnstr )
@@ -49,7 +48,7 @@ export default {
 				cm.doc.setValue( '' )
 			}
 		} )
-		EventBus.$on( 'node-clear-selected', () => {
+		this.$root.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 			cm.doc.setValue( '' )
 		} )
