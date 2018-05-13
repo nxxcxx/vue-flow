@@ -11,11 +11,11 @@
 		</div>
 		<div id="right">
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
-				<NodeGraph></NodeGraph>
+				<NodeGraph ></NodeGraph>
 			</div>
-			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
+			<!-- <div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph></NodeGraph>
-			</div>
+			</div> -->
 		</div>
 	</div>
 </template>
@@ -23,7 +23,7 @@
 <script>
 import NodeGraph from './NodeGraph.vue'
 import NodeEditor from './NodeEditor.vue'
-import CircularJSON from 'circular-json'
+import importGraphConfiguration from './import.svc.js'
 
 export default {
 	name: 'app',
@@ -33,8 +33,21 @@ export default {
 	},
 	data() {
 		return {
-			selectedNodes: []
+			graph: { x: 0 },
+			selectedNodes: [],
+			nodes: [],
+			connections: [],
 		}
+	},
+	methods: {
+		importGraph() {
+			let graph = importGraphConfiguration()
+			this.nodes = graph.nodes
+			this.connections = graph.connections
+		},
+	},
+	created() {
+		this.importGraph()
 	},
 	mounted() {
 		this.$root.$on( 'node-selected', nodes => {

@@ -36,6 +36,9 @@ import toposort from 'toposort'
 export default {
 	name: 'NodeGraph',
 	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
+	props: {
+		graph: { default: () => { return { nodes: [], connections: [] } } }
+	},
 	provide() {
 		return {
 			$EventBus: new Vue()
@@ -60,6 +63,7 @@ export default {
 	},
 	methods: {
 		init() {
+			console.log( this )
 			this.nodes.forEach( n => {
 				n.__vue__.moveByUnit( n.position.x, n.position.y )
 				n.__vue__.recordPrevPos()

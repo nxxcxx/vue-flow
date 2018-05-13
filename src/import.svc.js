@@ -1,4 +1,5 @@
 import nodeFactory from './NodeFactory.js'
+import { XPack } from './xpack.js'
 
 function importGraphConfiguration() {
 	let graph = require( './test_node_graph_01.json' )
@@ -28,6 +29,12 @@ function importGraphConfiguration() {
 		let input = uuid_io_map[ conn.input ]
 		connections.push( [ output, input ] )
 	}
+
+	// test XPACK
+	nodes.push(
+		new XPack()
+	)
+
 	return { nodes, connections }
 }
 
