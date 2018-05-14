@@ -7,10 +7,10 @@
 
 			<svg class="nodeContainerSvg">
 				<NodeGhostConnection></NodeGhostConnection>
-				<NodeConnection v-for="conn in connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
+				<NodeConnection v-for="conn in graph.connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
 			</svg>
 			<div class="nodeContainer">
-				<NodeModule v-for="node in nodes" :key="node.uuid"
+				<NodeModule v-for="node in graph.nodes" :key="node.uuid"
 					:node="node"
 					:selected="isNodeSelected( node )"
 				></NodeModule>
@@ -19,6 +19,8 @@
 		</div>
 
 		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
+
+		<button type="button" style="position: fixed; cursor: pointer; right: 0px;" @click="packSelectedNodes">PACK</button>
 
 	</div>
 </template>
@@ -32,6 +34,7 @@ import NodeGhostConnection from './NodeGhostConnection.vue'
 import SelectionBox from './SelectionBox.vue'
 import importGraphConfiguration from './import.svc.js'
 import toposort from 'toposort'
+import { XPack, RouterNode } from './xpack.js'
 
 export default {
 	name: 'NodeGraph',
@@ -63,12 +66,11 @@ export default {
 	},
 	methods: {
 		init() {
-			console.log( this )
-			this.nodes.forEach( n => {
+			this.graph.nodes.forEach( n => {
 				n.__vue__.moveByUnit( n.position.x, n.position.y )
 				n.__vue__.recordPrevPos()
 			} )
-			this.connections.forEach( pair => {
+			this.graph.connections.forEach( pair => {
 				this.connectIO( ...pair )
 			} )
 		},
@@ -101,11 +103,6 @@ export default {
 			this.vpd.zoomFactor = sf
 			this.$EventBus.$emit( 'vp-zoom' )
 		},
-		importGraph() {
-			let graph = importGraphConfiguration()
-			this.nodes = graph.nodes
-			this.connections = graph.connections
-		},
 		clearSelectedNodes() {
 			this.selectedNodes = []
 			this.$root.$emit( 'node-clear-selected' )
@@ -116,7 +113,7 @@ export default {
 			if ( !this.isNodeSelected( node ) ) {
 				this.selectedNodes.push( node )
 			}
-			this.nodes = [ ...this.nodes.filter( n => n !== node ), this.nodes[ this.nodes.indexOf( node ) ] ] // bring selected node to front
+			this.graph.nodes = [ ...this.graph.nodes.filter( n => n !== node ), this.graph.nodes[ this.graph.nodes.indexOf( node ) ] ] // bring selected node to front
 		},
 		removeNodeFromSelection( node ) {
 			this.selectedNodes = this.selectedNodes.filter( n => n !== node )
@@ -125,10 +122,10 @@ export default {
 			return !!this.selectedNodes.find( n => n.uuid === node.uuid )
 		},
 		isConnectionExists( opt, inp ) {
-			return !!this.connections.find( io => io[ 0 ] === opt && io[ 1 ] === inp )
+			return !!this.graph.connections.find( io => io[ 0 ] === opt && io[ 1 ] === inp )
 		},
 		isConnectionCyclic( opt, inp ) {
-			let testCase = [ ...this.connections, [ opt, inp ] ]
+			let testCase = [ ...this.graph.connections, [ opt, inp ] ]
 			try { this.computeToposort( testCase ) }
 			catch( ex ) { return true }
 			return false
@@ -148,7 +145,7 @@ export default {
 		},
 		_disconnectInput( inp ) {
 			inp.disconnect()
-			this.connections = this.connections.filter( io => io[ 1 ] !== inp )
+			this.graph.connections = this.graph.connections.filter( io => io[ 1 ] !== inp )
 		},
 		disconnectIO( io ) {
 			if ( io.type === 1 )
@@ -162,19 +159,27 @@ export default {
 		connectIO( opt, inp ) {
 			this._disconnectInput( inp )
 			inp.connect( opt )
-			this.connections.push( [ opt, inp ] )
+			this.graph.connections.push( [ opt, inp ] )
 		},
+		packSelectedNodes() {
+			let nodes = this.selectedNodes
+			nodes.forEach( n => {
+				n.input.forEach( inp => this.disconnectIO( inp ) )
+				n.output.forEach( inp => this.disconnectIO( inp ) )
+			} )
+			this.$root.$emit( 'xpack-nodes', nodes )
+		}
 	},
 	created() {
-		this.importGraph()
 		this.$EventBus = this._provided.$EventBus
 	},
 	mounted() {
 		this.init()
+		setTimeout( this.testPackingNode, 0 )
 		this.$EventBus.$on( 'node-click', ev => {
 		} )
 		this.$EventBus.$on( 'node-mousedown', payload => {
-			this.nodes.forEach( n => n.__vue__.recordPrevPos() )
+			this.graph.nodes.forEach( n => n.__vue__.recordPrevPos() )
 			if ( payload.event.shiftKey ) {
 				this.addNodeToSelection( payload.node )
 			} else if ( payload.event.ctrlKey ) {
@@ -187,7 +192,7 @@ export default {
 		} )
 		this.$EventBus.$on( 'node-mouseup', ev => {
 			this.selectedNodes.forEach( n => n.__vue__.recordPrevPos() )
-			this.nodes.forEach( n => n.__vue__.$emit( 'update-io-position' ) )
+			this.graph.nodes.forEach( n => n.__vue__.$emit( 'update-io-position' ) )
 		} )
 		this.$EventBus.$on( 'io-start-connecting', io => {
 			this.ioConnecting = true
@@ -197,8 +202,80 @@ export default {
 			this.$EventBus.$emit( 'ghost-connection-disable' )
 			this.ioConnecting = false
 			this.tempConnectionPair[ io.type ] = io
-			if ( this.isConnectionValid( this.tempConnectionPair ) )
-				this.connectIO( ...this.tempConnectionPair )
+			let [ opt, inp ] = this.tempConnectionPair
+			if ( opt !== null && inp !== null ) {
+				if ( inp.parent instanceof XPack || opt.parent instanceof XPack ||
+				inp.parent instanceof RouterNode || opt.parent instanceof RouterNode ) {
+
+					let [ ip, op ] = [ inp.parent, opt.parent ]
+					if ( ip instanceof XPack && op instanceof XPack  ) { // X - X
+						this.graph.connections.push( [ opt, inp ] )
+						let uStreamOutput = ip.uStreamRouter.output.find( uso => uso.name === inp.name )
+						let dStreamInput = op.dStreamRouter.input.find( dsi => dsi.name === opt.name )
+						inp.route = dStreamInput.route
+						opt.route = uStreamOutput.route
+						if ( inp.route && opt.route ) {
+							this.connectIO( inp.route, uStreamOutput.route )
+						}
+					} else if ( ip instanceof XPack && op instanceof RouterNode ) { // R - X
+						this.graph.connections.push( [ opt, inp ] )
+						let xInput = op.xpack.input.find( xin => xin.name === opt.name )
+						let uStreamOutput = ip.uStreamRouter.find( uso => uso.name === inp.name )
+						inp.route = uStreamOutput.route
+						opt.route = xInput.route
+						if ( inp.rote && opt.route ) {
+							this.connectIO( opt.route, inp.route )
+						}
+					} else if ( ip instanceof XPack ) { // N - X
+						this.graph.connections.push( [ opt, inp ] )
+						let xpack = ip
+						inp.route = opt
+						let uStreamOutput = xpack.uStreamRouter.output.find( uso => uso.name === inp.name )
+						if ( uStreamOutput.route && inp.route ) {
+							this.connectIO( inp.route, uStreamOutput.route )
+						}
+					} else if ( ip instanceof RouterNode && op instanceof XPack ) { // X - R
+						this.graph.connections.push( [ opt, inp ] )
+						let xOutput = ip.xpack.output.find( xop => xop.name === inp.name )
+						let dStreamInput = op.dStreamRouter.find( dsi => dsi.name === opt.name )
+						inp.route = xOutput.route
+						opt.route = dStreamInput.route
+						if ( inp.rote && opt.route ) {
+							this.connectIO( opt.route, inp.route )
+						}
+					} else if ( ip instanceof RouterNode && !( op instanceof RouterNode ) ) { // N - R
+						this.graph.connections.push( [ opt, inp ] )
+						let dStream = ip
+						inp.route = opt
+						let xOutput = dStream.xpack.output.find( xop => xop.name === inp.name )
+						if ( xOutput.route && inp.route ) {
+							this.connectIO( inp.route, xOutput.route )
+						}
+					} else if ( op instanceof XPack ) { // X - N
+						this.graph.connections.push( [ opt, inp ] )
+						let xpack = op
+						opt.route = inp
+						let dStreamInput = xpack.dStreamRouter.input.find( dsi => dsi.name === opt.name )
+						if ( dStreamInput.route && opt.route ) {
+							this.connectIO( dStreamInput.route, opt.route )
+						}
+					} else if ( op instanceof RouterNode && !( ip instanceof RouterNode ) ) { // R - N
+						this.graph.connections.push( [ opt, inp ] )
+						let uStream = op
+						opt.route = inp
+						let xInput = uStream.xpack.input.find( xin => xin.name === opt.name )
+						if ( xInput.route && opt.route ) {
+							this.connectIO( xInput.route, opt.route )
+						}
+					} else {
+					}
+
+				} else { // N - N
+					if ( this.isConnectionValid( this.tempConnectionPair ) ) {
+						this.connectIO( ...this.tempConnectionPair )
+					}
+				}
+			}
 		} )
 		this.$EventBus.$on( 'io-disconnect', io => {
 			this.disconnectIO( io )
@@ -221,8 +298,10 @@ export default {
 				this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				if ( ev.button !== 1 && this.leftMouseHold ) {
-					let selecting = this.nodes.filter( n => n.__vue__.selecting )
+				if ( ev.target.tagName !== 'BUTTON' &&
+						ev.button !== 1 && this.leftMouseHold
+					) {
+					let selecting = this.graph.nodes.filter( n => n.__vue__.selecting )
 					if ( !this.movingNode ) {
 						if ( selecting.length > 0 ) {
 							if ( ev.shiftKey ) {

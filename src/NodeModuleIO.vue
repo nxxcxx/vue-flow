@@ -26,6 +26,8 @@ export default {
 		isInput() { return this.type === 'input' },
 		isOutput() { return this.type === 'output' },
 		updatePosition() {
+			// console.log( this.$refs.ioPort )
+			if ( !this.$refs.ioPort ) return
 			let port = $( this.$refs.ioPort )
 			, [ woff, hoff ] = [ ( port.width() + 1.0 ) * ( this.io.type === 0 ? 1 : 0 ) , port.height() * 0.5 + 0.5 ]
 			, off = port.offset()

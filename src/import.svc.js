@@ -29,12 +29,6 @@ function importGraphConfiguration() {
 		let input = uuid_io_map[ conn.input ]
 		connections.push( [ output, input ] )
 	}
-
-	// test XPACK
-	nodes.push(
-		new XPack()
-	)
-
 	return { nodes, connections }
 }
 
