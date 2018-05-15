@@ -63,6 +63,9 @@ export default {
 			.on( 'click', ev => {
 				this.$EventBus.$emit( 'node-click', ev )
 			} )
+			.on( 'dblclick', ev => {
+				this.$EventBus.$emit( 'node-dblclick', ev )
+			} )
 			.on( 'mousedown', ev => {
 				if ( ev.button !== 0 ) return
 				this.recordPrevPos()

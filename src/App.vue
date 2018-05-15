@@ -10,15 +10,12 @@
 			<NodeEditor></NodeEditor>
 		</div>
 		<div id="right">
-			<div style="position: relative; width: 100%; height: 33%; top: 0px; left: 0px">
+			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph :graph="graph"></NodeGraph>
 			</div>
-			<div style="position: relative; width: 100%; height: 33%; top: 0px; left: 0px">
+			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph :graph="xPackGraph1"></NodeGraph>
 			</div>
-			<!-- <div style="position: relative; width: 100%; height: 33%; top: 0px; left: 0px">
-				<NodeGraph :graph="getXpackNodesLv2()"></NodeGraph>
-			</div> -->
 		</div>
 	</div>
 </template>
@@ -48,25 +45,18 @@ export default {
 			this.graph.nodes = graph.nodes
 			this.graph.connections = graph.connections
 		},
-		xpack( pNodes ) {
-			let xp = new XPack( pNodes )
-			this.graph.nodes = this.graph.nodes.filter( n => pNodes.indexOf( n ) < 0 )
-			this.graph.nodes.push( xp )
-		},
 	},
 	created() {
 		this.importGraph()
 	},
 	mounted() {
-		this.$root.$on( 'xpack-nodes', nodes => {
-			this.xpack( nodes )
-		} )
-		this.$root.$on( 'node-selected', nodes => {
+		this.$root.$on( 'xpack-view', nodes => {
 			this.selectedNodes = nodes
 			if ( nodes.length === 1 ) {
 				if ( nodes[ 0 ] instanceof XPack ) {
-					this.xPackGraph1 = nodes[ 0 ]
-					console.log( nodes[ 0 ] )
+					let xpack = nodes[ 0 ]
+					this.xPackGraph1 = xpack
+					console.log( xpack )
 				}
 			}
 		} )

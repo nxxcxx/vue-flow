@@ -9,6 +9,7 @@
 				<NodeGhostConnection></NodeGhostConnection>
 				<NodeConnection v-for="conn in graph.connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
 			</svg>
+
 			<div class="nodeContainer">
 				<NodeModule v-for="node in graph.nodes" :key="node.uuid"
 					:node="node"
@@ -49,8 +50,6 @@ export default {
 	},
 	data() {
 		return {
-			nodes: [],
-			connections: [],
 			selectedNodes: [],
 			tempConnectionPair: [ null, null ],
 			vpd: {
@@ -160,6 +159,7 @@ export default {
 			this._disconnectInput( inp )
 			inp.connect( opt )
 			this.graph.connections.push( [ opt, inp ] )
+			// console.log( 'connect', `${opt.parent.name}:${opt.name} ${inp.parent.name}:${inp.name}` )
 		},
 		packSelectedNodes() {
 			let nodes = this.selectedNodes
@@ -167,7 +167,57 @@ export default {
 				n.input.forEach( inp => this.disconnectIO( inp ) )
 				n.output.forEach( inp => this.disconnectIO( inp ) )
 			} )
-			this.$root.$emit( 'xpack-nodes', nodes )
+			let xp = new XPack( nodes )
+			xp.addInput( 'A', 'B', 'C', 'D' )
+			xp.addOutput( '1', '2', '3', '4' )
+			xp.uStreamRouter.addOutput( 'A', 'B', 'C', 'D' )
+			xp.dStreamRouter.addInput( '1', '2', '3', '4' )
+			this.graph.nodes = this.graph.nodes.filter( n => nodes.indexOf( n ) < 0 )
+			this.graph.nodes.push( xp )
+		},
+		traceProxyOutput( output ) {
+			// trace from output -> input(s), return array of input(s)
+			let self = this
+			function flatten( arr ) {
+				return arr.reduce( function ( flat, toFlatten ) {
+					return flat.concat( Array.isArray( toFlatten ) ? flatten( toFlatten ) : toFlatten )
+				}, [] )
+			}
+			function traceInput( input ) {
+				if ( input.parent instanceof XPack ) {
+					let router = input.parent.uStreamRouter
+					let routerOutput = router.output.find( opt => opt.name === input.name )
+					return self.traceProxyOutput( routerOutput )
+				} else if ( input.parent instanceof RouterNode ) {
+					let xpack = input.parent.xpack
+					let xpackOutput = xpack.output.find( opt => opt.name === input.name )
+					return self.traceProxyOutput( xpackOutput )
+				} else if ( input.parent.constructor.name === 'Node' ) {
+					return input
+				}
+			}
+			let endPointInp = output.proxyInput
+			return flatten( endPointInp.map( inp => traceInput( inp ) ) )
+		},
+		traceProxyInput( input ) {
+			// trace backward from input -> output, return single output
+			let self = this
+			function traceOutput( output ) {
+				if ( output.parent instanceof XPack ) {
+					let router = output.parent.dStreamRouter
+					let routerInput = router.input.find( inp => inp.name === output.name )
+					return self.traceProxyInput( routerInput )
+				} else if ( output.parent instanceof RouterNode ) {
+					let xpack = output.parent.xpack
+					let xpackInput = xpack.input.find( inp => inp.name === output.name )
+					return self.traceProxyInput( xpackInput )
+				} else if ( output.parent.constructor.name === 'Node' ) {
+					return output
+				}
+			}
+			let endPointOpt = input.proxyOutput
+			if ( endPointOpt === null ) return null
+			return traceOutput( endPointOpt )
 		}
 	},
 	created() {
@@ -175,8 +225,11 @@ export default {
 	},
 	mounted() {
 		this.init()
-		setTimeout( this.testPackingNode, 0 )
 		this.$EventBus.$on( 'node-click', ev => {
+		} )
+		this.$EventBus.$on( 'node-dblclick', ev => {
+			this.$root.$emit( 'xpack-view', this.selectedNodes )
+			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
 		} )
 		this.$EventBus.$on( 'node-mousedown', payload => {
 			this.graph.nodes.forEach( n => n.__vue__.recordPrevPos() )
@@ -207,70 +260,18 @@ export default {
 				if ( inp.parent instanceof XPack || opt.parent instanceof XPack ||
 				inp.parent instanceof RouterNode || opt.parent instanceof RouterNode ) {
 
-					let [ ip, op ] = [ inp.parent, opt.parent ]
-					if ( ip instanceof XPack && op instanceof XPack  ) { // X - X
-						this.graph.connections.push( [ opt, inp ] )
-						let uStreamOutput = ip.uStreamRouter.output.find( uso => uso.name === inp.name )
-						let dStreamInput = op.dStreamRouter.input.find( dsi => dsi.name === opt.name )
-						inp.route = dStreamInput.route
-						opt.route = uStreamOutput.route
-						if ( inp.route && opt.route ) {
-							this.connectIO( inp.route, uStreamOutput.route )
-						}
-					} else if ( ip instanceof XPack && op instanceof RouterNode ) { // R - X
-						this.graph.connections.push( [ opt, inp ] )
-						let xInput = op.xpack.input.find( xin => xin.name === opt.name )
-						let uStreamOutput = ip.uStreamRouter.find( uso => uso.name === inp.name )
-						inp.route = uStreamOutput.route
-						opt.route = xInput.route
-						if ( inp.rote && opt.route ) {
-							this.connectIO( opt.route, inp.route )
-						}
-					} else if ( ip instanceof XPack ) { // N - X
-						this.graph.connections.push( [ opt, inp ] )
-						let xpack = ip
-						inp.route = opt
-						let uStreamOutput = xpack.uStreamRouter.output.find( uso => uso.name === inp.name )
-						if ( uStreamOutput.route && inp.route ) {
-							this.connectIO( inp.route, uStreamOutput.route )
-						}
-					} else if ( ip instanceof RouterNode && op instanceof XPack ) { // X - R
-						this.graph.connections.push( [ opt, inp ] )
-						let xOutput = ip.xpack.output.find( xop => xop.name === inp.name )
-						let dStreamInput = op.dStreamRouter.find( dsi => dsi.name === opt.name )
-						inp.route = xOutput.route
-						opt.route = dStreamInput.route
-						if ( inp.rote && opt.route ) {
-							this.connectIO( opt.route, inp.route )
-						}
-					} else if ( ip instanceof RouterNode && !( op instanceof RouterNode ) ) { // N - R
-						this.graph.connections.push( [ opt, inp ] )
-						let dStream = ip
-						inp.route = opt
-						let xOutput = dStream.xpack.output.find( xop => xop.name === inp.name )
-						if ( xOutput.route && inp.route ) {
-							this.connectIO( inp.route, xOutput.route )
-						}
-					} else if ( op instanceof XPack ) { // X - N
-						this.graph.connections.push( [ opt, inp ] )
-						let xpack = op
-						opt.route = inp
-						let dStreamInput = xpack.dStreamRouter.input.find( dsi => dsi.name === opt.name )
-						if ( dStreamInput.route && opt.route ) {
-							this.connectIO( dStreamInput.route, opt.route )
-						}
-					} else if ( op instanceof RouterNode && !( ip instanceof RouterNode ) ) { // R - N
-						this.graph.connections.push( [ opt, inp ] )
-						let uStream = op
-						opt.route = inp
-						let xInput = uStream.xpack.input.find( xin => xin.name === opt.name )
-						if ( xInput.route && opt.route ) {
-							this.connectIO( xInput.route, opt.route )
-						}
-					} else {
-					}
+					// TODO create proxy connection
+					this.graph.connections.push( [ opt, inp ] )
+					inp.connectProxy( opt )
 
-				} else { // N - N
+					let endPointOutput = this.traceProxyInput( inp )
+					if ( endPointOutput )
+						console.log( `${endPointOutput.parent.name} : ${endPointOutput.name}` )
+					console.log( this.traceProxyOutput( opt ).map( input => {
+						return `${input.parent.name} : ${input.name}`
+					} ) )
+
+				} else {
 					if ( this.isConnectionValid( this.tempConnectionPair ) ) {
 						this.connectIO( ...this.tempConnectionPair )
 					}

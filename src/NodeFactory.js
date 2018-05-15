@@ -14,6 +14,7 @@ class Input extends Connection {
 	constructor( name, parent ) {
 		super( name, parent )
 		this.output = null
+		this.proxyOutput = null
 		this.type = 1
 	}
 	connect( output ) {
@@ -21,6 +22,13 @@ class Input extends Connection {
 		this.output = output
 		this.free = false
 		output.input.push( this )
+		output.free = false
+	}
+	connectProxy( output ) {
+		if ( !( output instanceof Output ) ) return
+		this.proxyOutput = output
+		this.free = false
+		output.proxyInput.push( this )
 		output.free = false
 	}
 	disconnect() {
@@ -42,6 +50,7 @@ class Output extends Connection {
 		super( name, parent )
 		this.data = null
 		this.input = []
+		this.proxyInput = []
 		this.type = 0
 	}
 	flush() {
