@@ -6,7 +6,9 @@
 			}"
 		>
 		</div>
-		<div class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }">
+		<div class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }"
+			@click="debug()"
+		>
 			{{ io.name }}
 		</div>
 	</div>
@@ -37,6 +39,23 @@ export default {
 			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + woff
 			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hoff
 		},
+		debug() {
+			console.log( this.io, `${this.io.name} [${this.io.parent.name}]` )
+			let pName = this.io.parent.name
+			if ( this.io.type === 0 ) {
+				let prox = this.io.proxyInput
+				console.log( '\tPROXY CONNECTION' )
+				prox.forEach( p => console.log( '\t\t', p, `${p.name} [${p.parent.name}]` ) )
+				console.log( '\tLOGICAL CONNECTION' )
+				this.io.input.forEach( inp => console.log( '\t\t', inp, `${inp.name} [${inp.parent.name}]`) )
+			} else {
+				let prox = this.io.proxyOutput
+				console.log( '\tPROXY CONNECTION' )
+				console.log( '\t\t', `${prox.name} [${prox.parent.name}]` )
+				console.log( '\tLOGICAL CONNECTION' )
+				if ( this.io.output ) console.log( '\t\t', this.io.output, `${this.io.output.name} [${this.io.output.parent.name}]`)
+			}
+		}
 	},
 	created() {
 		this.io.__vue__ = this

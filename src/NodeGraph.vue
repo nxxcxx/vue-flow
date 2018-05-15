@@ -70,7 +70,7 @@ export default {
 				n.__vue__.recordPrevPos()
 			} )
 			this.graph.connections.forEach( pair => {
-				this.connectIO( ...pair )
+				this.connectXPackIo( ...pair )
 			} )
 		},
 		getContainerMatrix() {
@@ -142,30 +142,61 @@ export default {
 				!this.isConnectionCyclic( opt, inp )
 			)
 		},
-		_disconnectInput( inp ) {
-			inp.disconnect()
-			this.graph.connections = this.graph.connections.filter( io => io[ 1 ] !== inp )
-		},
-		disconnectIO( io ) {
-			if ( io.type === 1 )
-				this._disconnectInput( io )
-			else {
-				for ( let inp of [ ...io.input ] ) {
-					this._disconnectInput( inp )
+		disconnectXPackByInput( io ) {
+			if ( io.type !== 1 ) throw new Error( 'disconnectXPackByInput accept only input type' )
+			if ( io.parent.constructor.name === 'Node' ) {
+				if ( io.proxyOutput ) {
+					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
+					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
+				}
+				io.disconnect()
+			} else if ( io.parent instanceof XPack ) {
+				let rOutput = io.parent.uStreamRouter.output.find( opt => opt.name === io.name )
+				let endPointInput = this.traceProxyOutput( rOutput )
+				if ( io.proxyOutput ) {
+					let proxyParent = io.proxyOutput.parent
+
+					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
+					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
+				}
+				if ( endPointInput ) {
+					endPointInput.forEach( inp => inp.disconnect() )
+				}
+			} else if ( io.parent instanceof RouterNode ) {
+				let xOutput = io.parent.xpack.output.find( opt => opt.name === io.name )
+				let endPointInput = this.traceProxyOutput( xOutput )
+				if ( io.proxyOutput ) {
+					let proxyParent = io.proxyOutput.parent
+
+					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
+					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
+				}
+				if ( endPointInput ) {
+					endPointInput.forEach( inp => inp.disconnect() )
 				}
 			}
+
+			io.proxyOutput = null
+			io.free = true
+			this.graph.connections = this.graph.connections.filter( pair => pair[ 1 ] !== io )
 		},
-		connectIO( opt, inp ) {
-			this._disconnectInput( inp )
-			inp.connect( opt )
+		connectXPackIo( opt, inp ) {
+			this.disconnectXPackByInput( inp )
+			inp.connectProxy( opt )
+			let endPointOutput = this.traceProxyInput( inp )
+			let endPointInput = this.traceProxyOutput( opt )
+			if ( endPointOutput ) {
+				endPointInput.forEach( eInp => eInp.connect( endPointOutput ) )
+			}
 			this.graph.connections.push( [ opt, inp ] )
-			// console.log( 'connect', `${opt.parent.name}:${opt.name} ${inp.parent.name}:${inp.name}` )
 		},
 		packSelectedNodes() {
 			let nodes = this.selectedNodes
 			nodes.forEach( n => {
-				n.input.forEach( inp => this.disconnectIO( inp ) )
-				n.output.forEach( inp => this.disconnectIO( inp ) )
+				n.input.forEach( inp => this.disconnectXPackByInput( inp ) )
+				n.output.forEach( opt => {
+					opt.input.forEach( inp => this.disconnectXPackByInput( inp ) )
+				} )
 			} )
 			let xp = new XPack( nodes )
 			xp.addInput( 'A', 'B', 'C', 'D' )
@@ -196,8 +227,10 @@ export default {
 					return input
 				}
 			}
-			let endPointInp = output.proxyInput
-			return flatten( endPointInp.map( inp => traceInput( inp ) ) )
+			if ( output === null ) return null
+			let endPointInput = output.proxyInput
+			if ( endPointInput === null ) return null
+			return flatten( endPointInput.map( inp => traceInput( inp ) ) )
 		},
 		traceProxyInput( input ) {
 			// trace backward from input -> output, return single output
@@ -215,9 +248,10 @@ export default {
 					return output
 				}
 			}
-			let endPointOpt = input.proxyOutput
-			if ( endPointOpt === null ) return null
-			return traceOutput( endPointOpt )
+			if ( input === null ) return null
+			let endPointOutput = input.proxyOutput
+			if ( endPointOutput === null ) return null
+			return traceOutput( endPointOutput )
 		}
 	},
 	created() {
@@ -257,29 +291,15 @@ export default {
 			this.tempConnectionPair[ io.type ] = io
 			let [ opt, inp ] = this.tempConnectionPair
 			if ( opt !== null && inp !== null ) {
-				if ( inp.parent instanceof XPack || opt.parent instanceof XPack ||
-				inp.parent instanceof RouterNode || opt.parent instanceof RouterNode ) {
-
-					// TODO create proxy connection
-					this.graph.connections.push( [ opt, inp ] )
-					inp.connectProxy( opt )
-
-					let endPointOutput = this.traceProxyInput( inp )
-					if ( endPointOutput )
-						console.log( `${endPointOutput.parent.name} : ${endPointOutput.name}` )
-					console.log( this.traceProxyOutput( opt ).map( input => {
-						return `${input.parent.name} : ${input.name}`
-					} ) )
-
-				} else {
-					if ( this.isConnectionValid( this.tempConnectionPair ) ) {
-						this.connectIO( ...this.tempConnectionPair )
-					}
-				}
+				this.connectXPackIo( ...this.tempConnectionPair )
 			}
 		} )
 		this.$EventBus.$on( 'io-disconnect', io => {
-			this.disconnectIO( io )
+			if ( io.type === 1 ) {
+				this.disconnectXPackByInput( io )
+			} else {
+				io.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
+			}
 		} )
 		$( this.$refs.nodeGraphBG )
 			.on( 'mousedown', ev => {

@@ -56,7 +56,6 @@ export default {
 				if ( nodes[ 0 ] instanceof XPack ) {
 					let xpack = nodes[ 0 ]
 					this.xPackGraph1 = xpack
-					console.log( xpack )
 				}
 			}
 		} )

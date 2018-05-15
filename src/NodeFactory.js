@@ -21,14 +21,16 @@ class Input extends Connection {
 		if ( !( output instanceof Output ) ) return
 		this.output = output
 		this.free = false
-		output.input.push( this )
+		if ( output.input.indexOf( this ) < 0 )
+			output.input.push( this )
 		output.free = false
 	}
 	connectProxy( output ) {
 		if ( !( output instanceof Output ) ) return
 		this.proxyOutput = output
 		this.free = false
-		output.proxyInput.push( this )
+		if ( output.proxyInput.indexOf( this ) < 0 )
+			output.proxyInput.push( this )
 		output.free = false
 	}
 	disconnect() {
