@@ -11,6 +11,7 @@
 export default {
 	name: 'SelectionBox',
 	props: [ 'enable' ],
+	inject: [ '$EventBus' ],
 	data() {
 		return {
 			active: false,
@@ -72,12 +73,12 @@ export default {
 				}, {
 					l: n.position.x,
 					t: n.position.y,
-					r: n.position.x + $( n.__vue__.$refs.nodeModule ).outerWidth(),
-					b: n.position.y + $( n.__vue__.$refs.nodeModule ).outerHeight()
+					r: n.position.x + n._dimension.w,
+					b: n.position.y + n._dimension.h
 				} ) ) {
-					n.__vue__.setSelecting()
+					this.$EventBus.$emit( 'node-set-selecting', n )
 				} else {
-					n.__vue__.clearSelecting()
+					this.$EventBus.$emit( 'node-clear-selecting', n )
 				}
 			} )
 			function doRectIntersect( r1, r2 ) {

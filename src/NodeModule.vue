@@ -1,7 +1,7 @@
 <template>
 	<div ref="nodeModule" class="nodeModule"
 		:style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }"
-		:class="{ selected, tmpSelected: selecting }"
+		:class="{ selected, tmpSelected: node._selecting }"
 	>
 		<div class="header">
 			{{ node.name }}
@@ -32,15 +32,14 @@ export default {
 	data() {
 		return {
 			prevPos: { left: 0, top: 0 },
-			selecting: false
 		}
 	},
 	methods: {
 		setSelecting() {
-			this.selecting = true
+			this.node._selecting = true
 		},
 		clearSelecting() {
-			this.selecting = false
+			this.node._selecting = false
 		},
 		setPosition( x, y ) {
 			this.node.position = { x, y }
@@ -54,11 +53,31 @@ export default {
 			this.setPosition( x, y )
 			this.$emit( 'update-io-position', this.node.uuid )
 		},
-	},
-	created() {
-		this.node.__vue__ = this
+		updateDimension() {
+			let w = $( this.$refs.nodeModule ).outerWidth()
+			let h = $( this.$refs.nodeModule ).outerHeight()
+			this.node._dimension = { w, h }
+		}
 	},
 	mounted() {
+		this.updateDimension()
+		this.$EventBus.$on( 'node-set-selecting', node => {
+			if ( node === this.node ) this.setSelecting()
+		} )
+		this.$EventBus.$on( 'node-clear-selecting', node => {
+			if ( node === this.node ) this.clearSelecting()
+		} )
+		this.$EventBus.$on( 'update-io-position', () => {
+			this.$emit( 'update-io-position', this.node.uuid )
+		} )
+		this.$EventBus.$on( 'node-record-prev-pos', () => {
+			this.recordPrevPos()
+		} )
+		this.$EventBus.$on( 'node-move', meta => {
+			if ( meta.nodes.indexOf( this.node ) >= 0 ) {
+				this.moveByUnit( meta.delta.dx, meta.delta.dy )
+			}
+		} )
 		$( this.$refs.nodeModule )
 			.on( 'click', ev => {
 				this.$EventBus.$emit( 'node-click', ev )
@@ -96,7 +115,7 @@ export default {
 		&:hover
 			border: 1px solid $r0
 		&.tmpSelected
-			border: 1px solid $r0
+			border: 1px solid red
 		&.selected
 			border: 1px solid $b0
 	.header
@@ -108,11 +127,9 @@ export default {
 		width: 16px
 		display: inline-block
 	.inputColumn
-		// margin-left: -1px
 		padding: 0px
 		display: inline-block
 	.outputColumn
-		// margin-right: -1px
 		padding: 0px
 		display: inline-block
 </style>

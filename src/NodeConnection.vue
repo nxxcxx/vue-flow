@@ -42,18 +42,10 @@ export default {
 		},
 		onMouseEnter() {
 			this.hover = true
-			this.conn[ 0 ].__vue__.selected = true
-			this.conn[ 1 ].__vue__.selected = true
 		},
 		onMouseLeave() {
 			this.hover = false
-			this.conn[ 0 ].__vue__.selected = false
-			this.conn[ 1 ].__vue__.selected = false
 		}
-	},
-	beforeDestroy() {
-		this.conn[ 0 ].__vue__.selected = false
-		this.conn[ 1 ].__vue__.selected = false
 	}
 }
 </script>

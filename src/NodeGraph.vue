@@ -65,13 +65,8 @@ export default {
 	},
 	methods: {
 		init() {
-			this.graph.nodes.forEach( n => {
-				n.__vue__.moveByUnit( n.position.x, n.position.y )
-				n.__vue__.recordPrevPos()
-			} )
-			this.graph.connections.forEach( pair => {
-				this.connectXPackIo( ...pair )
-			} )
+			this.graph.connections.forEach( pair => this.connectXPackIo( ...pair ) )
+			this.$EventBus.$emit( 'node-record-prev-pos' )
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
@@ -261,7 +256,7 @@ export default {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
 		} )
 		this.$EventBus.$on( 'node-mousedown', payload => {
-			this.graph.nodes.forEach( n => n.__vue__.recordPrevPos() )
+			this.$EventBus.$emit( 'node-record-prev-pos' )
 			if ( payload.event.shiftKey ) {
 				this.addNodeToSelection( payload.node )
 			} else if ( payload.event.ctrlKey ) {
@@ -273,8 +268,8 @@ export default {
 			this.movingNode = true
 		} )
 		this.$EventBus.$on( 'node-mouseup', ev => {
-			this.selectedNodes.forEach( n => n.__vue__.recordPrevPos() )
-			this.graph.nodes.forEach( n => n.__vue__.$emit( 'update-io-position' ) )
+			this.$EventBus.$emit( 'node-record-prev-pos' )
+			this.$EventBus.$emit( 'update-io-position' )
 		} )
 		this.$EventBus.$on( 'io-start-connecting', io => {
 			this.ioConnecting = true
@@ -317,24 +312,24 @@ export default {
 				if ( ev.target.tagName !== 'BUTTON' &&
 						ev.button !== 1 && this.leftMouseHold
 					) {
-					let selecting = this.graph.nodes.filter( n => n.__vue__.selecting )
+					let selecting = this.graph.nodes.filter( n => n._selecting )
 					if ( !this.movingNode ) {
 						if ( selecting.length > 0 ) {
 							if ( ev.shiftKey ) {
 								selecting.forEach( n => {
 									this.addNodeToSelection( n )
-									n.__vue__.clearSelecting()
+									this.$EventBus.$emit( 'node-clear-selecting', n )
 								} )
 							} else if ( ev.ctrlKey ) {
 								selecting.forEach( n => {
 									this.removeNodeFromSelection( n )
-									n.__vue__.clearSelecting()
+									this.$EventBus.$emit( 'node-clear-selecting', n )
 								} )
 							} else {
 								this.clearSelectedNodes()
 								selecting.forEach( n => {
 									this.addNodeToSelection( n )
-									n.__vue__.clearSelecting()
+									this.$EventBus.$emit( 'node-clear-selecting', n )
 								} )
 							}
 							this.$root.$emit( 'node-selected', this.selectedNodes )
@@ -343,8 +338,6 @@ export default {
 						}
 					}
 				}
-				if ( this.tempConnectionPair[ 0 ] ) this.tempConnectionPair[ 0 ].__vue__.selected = false
-				if ( this.tempConnectionPair[ 1 ] ) this.tempConnectionPair[ 1 ].__vue__.selected = false
 				this.leftMouseHold = false
 				this.vpd.mouseHoldBg = false
 				this.vpd.middleMouseHold = false
@@ -378,7 +371,10 @@ export default {
 					!this.ioConnecting
 				) {
 					this.selectedNodes.forEach( n => {
-						n.__vue__.moveByUnit( dx, dy )
+						this.$EventBus.$emit( 'node-move', {
+							nodes: this.selectedNodes,
+							delta: { dx, dy }
+						} )
 					} )
 				}
 

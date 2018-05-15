@@ -14,7 +14,7 @@
 				<NodeGraph :graph="graph"></NodeGraph>
 			</div>
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
-				<NodeGraph :graph="xPackGraph1"></NodeGraph>
+				<NodeGraph :graph="graph"></NodeGraph>
 			</div>
 		</div>
 	</div>
