@@ -51,7 +51,7 @@ export default {
 			} else {
 				let prox = this.io.proxyOutput
 				console.log( '\tPROXY CONNECTION' )
-				console.log( '\t\t', `${prox.name} [${prox.parent.name}]` )
+				if ( prox ) console.log( '\t\t', `${prox.name} [${prox.parent.name}]` )
 				console.log( '\tLOGICAL CONNECTION' )
 				if ( this.io.output ) console.log( '\t\t', this.io.output, `${this.io.output.name} [${this.io.output.parent.name}]`)
 			}

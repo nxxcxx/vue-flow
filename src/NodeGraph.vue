@@ -154,8 +154,6 @@ export default {
 				let rOutput = io.parent.uStreamRouter.output.find( opt => opt.name === io.name )
 				let endPointInput = this.traceProxyOutput( rOutput )
 				if ( io.proxyOutput ) {
-					let proxyParent = io.proxyOutput.parent
-
 					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
 					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
 				}
@@ -166,8 +164,6 @@ export default {
 				let xOutput = io.parent.xpack.output.find( opt => opt.name === io.name )
 				let endPointInput = this.traceProxyOutput( xOutput )
 				if ( io.proxyOutput ) {
-					let proxyParent = io.proxyOutput.parent
-
 					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
 					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
 				}
@@ -175,7 +171,6 @@ export default {
 					endPointInput.forEach( inp => inp.disconnect() )
 				}
 			}
-
 			io.proxyOutput = null
 			io.free = true
 			this.graph.connections = this.graph.connections.filter( pair => pair[ 1 ] !== io )
