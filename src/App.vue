@@ -40,9 +40,10 @@ export default {
 	},
 	methods: {
 		importGraph() {
-			let graph = importGraphConfiguration()
-			this.graph.nodes = graph.nodes
-			this.graph.connections = graph.connections
+			let importedGraph = importGraphConfiguration()
+			this.graph = new XPack()
+			this.graph.addNodes( importedGraph.nodes )
+			this.graph.addConnections( importedGraph.connections )
 		},
 	},
 	created() {

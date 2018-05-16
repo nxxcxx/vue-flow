@@ -1,18 +1,18 @@
 <template>
 	<div>
 
-		<div style="font-size: 0.9em; position: absolute; top: 20px; left: 10px; z-index: 10; pointer-events: none; background: rgba(200, 200, 200, 0.025);">
+		<div style="font-size: 0.9em; padding: 5px; position: absolute; top: 25px; left: 10px; z-index: 10; pointer-events: none; background: rgba(200, 200, 200, 0.025);">
 			<TreeView :xpack="graphViewTree" :depth="0"></TreeView>
 		</div>
 
-		<nav style="z-index: 10; position: absolute; left: 4px; padding: 0px 4px; cursor: pointer; user-select: none;">
+		<nav style="background: #181a1c; z-index: 10; position: absolute; left: 4px; top: 4px; padding: 0px 4px; cursor: pointer; user-select: none;">
 			<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
 				<span @click="viewXPack( path.node )">{{ path.name }}</span>
 				<span v-if="idx !== graphViewPath.length - 1"> > </span>
 			</span>
 		</nav>
 
-		<div style="position: absolute; cursor: pointer; right: 10px; z-index: 10; user-select: none;" @click="packSelectedNodes">PACK</div>
+		<div style="background: #181a1c; padding: 0px 4px; position: absolute; cursor: pointer; right: 10px; top: 4px; z-index: 10; user-select: none;" @click="packSelectedNodes">PACK</div>
 
 		<div ref="nodeGraphRoot" id="nodeGraphRoot">
 
@@ -206,15 +206,17 @@ export default {
 				n.input.forEach( inp => this.disconnectXPackByInput( inp ) )
 				n.output.forEach( opt => {
 					opt.input.forEach( inp => this.disconnectXPackByInput( inp ) )
+					opt.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
 				} )
 			} )
-			let xp = new XPack( nodes, this.graphView )
+			let parent = nodes[ 0 ].parent
+			let xp = new XPack( nodes )
 			xp.addInput( 'A', 'B', 'C', 'D' )
 			xp.addOutput( '1', '2', '3', '4' )
 			xp.uStreamRouter.addOutput( 'A', 'B', 'C', 'D' )
 			xp.dStreamRouter.addInput( '1', '2', '3', '4' )
-			this.graphView.nodes = this.graphView.nodes.filter( n => nodes.indexOf( n ) < 0 )
-			this.graphView.nodes.push( xp )
+			parent.removeNodes( nodes )
+			parent.addNodes( [ xp ] )
 		},
 		traceProxyOutput( output ) {
 			// trace from output -> input(s), return array of input(s)
@@ -297,6 +299,7 @@ export default {
 		} )
 		this.$EventBus.$on( 'node-dblclick', payload => {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
+			// TODO view xpack if not mouseover io
 			if ( payload.node instanceof XPack ) {
 				this.viewXPack( payload.node )
 			}

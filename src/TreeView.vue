@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<pre style="margin: 0px;">{{ indent }}└─ {{ xpack.name }}</pre>
+		<pre style="margin: 0px;">{{ indent }} {{ depth !== 0 ? '└─' : '' }} {{ xpack.name }}</pre>
 		<TreeView
 			v-for="xp in xpack.nodes"
 			v-if="shouldRender( xp )"
