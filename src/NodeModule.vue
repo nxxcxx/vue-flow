@@ -45,7 +45,7 @@ export default {
 			this.node.position = { x, y }
 		},
 		recordPrevPos() {
-			this.prevPos = $( this.$refs.nodeModule ).position()
+			this.prevPos = $( this.$refs.nodeModule ).position() || this.prevPos
 		},
 		moveByUnit( dx, dy ) {
 			let zf = this.$parent.vpd.zoomFactor
@@ -83,14 +83,15 @@ export default {
 				this.$EventBus.$emit( 'node-click', ev )
 			} )
 			.on( 'dblclick', ev => {
-				this.$EventBus.$emit( 'node-dblclick', ev )
+				this.$EventBus.$emit( 'node-dblclick', {
+					node: this.node, event: ev
+				} )
 			} )
 			.on( 'mousedown', ev => {
 				if ( ev.button !== 0 ) return
 				this.recordPrevPos()
 				this.$EventBus.$emit( 'node-mousedown', {
-					node: this.node,
-					event: ev
+					node: this.node, event: ev
 				} )
 			} )
 			.on( 'mouseup', ev => {

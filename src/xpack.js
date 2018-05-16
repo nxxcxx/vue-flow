@@ -8,7 +8,7 @@ class RouterNode extends nodeFactory.Node {
 }
 
 class XPack extends nodeFactory.Node {
-	constructor( nodes = [] ) {
+	constructor( nodes = [], parent = null ) {
 		super( 'XPack' )
 		this.uStreamRouter = new RouterNode( 'U-STREAM' )
 		this.uStreamRouter.xpack = this
@@ -16,7 +16,9 @@ class XPack extends nodeFactory.Node {
 		this.routers = [ this.uStreamRouter, this.dStreamRouter ]
 		this.dStreamRouter.xpack = this
 		this.nodes = [ ...this.routers, ...nodes ]
+		this.nodes.forEach( n => n.parent = this )
 		this.connections = []
+		this.parent = parent
 	}
 }
 

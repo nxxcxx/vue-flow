@@ -114,6 +114,7 @@ class Node extends Executable {
 		this.order = -1
 		this.position = { x: 0, y: 0 }
 		this.type = type
+		this.parent = null
 		this._selecting = false
 		this._dimension = { w: 0, h: 0 }
 	}

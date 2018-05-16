@@ -1,28 +1,42 @@
 <template>
-	<div ref="nodeGraphRoot" id="nodeGraphRoot">
+	<div>
 
-		<div ref="nodeGraphBG" class="nodeGraphBG"></div>
-
-		<div ref="nodeGraphContainer" class="nodeGraphContainer">
-
-			<svg class="nodeContainerSvg">
-				<NodeGhostConnection></NodeGhostConnection>
-				<NodeConnection v-for="conn in graph.connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
-			</svg>
-
-			<div class="nodeContainer">
-				<NodeModule v-for="node in graph.nodes" :key="node.uuid"
-					:node="node"
-					:selected="isNodeSelected( node )"
-				></NodeModule>
-			</div>
-
+		<div style="font-size: 0.9em; position: absolute; top: 20px; left: 10px; z-index: 10; pointer-events: none; background: rgba(200, 200, 200, 0.025);">
+			<TreeView :xpack="graphViewTree" :depth="0"></TreeView>
 		</div>
 
-		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
+		<nav style="z-index: 10; position: absolute; left: 4px; padding: 0px 4px; cursor: pointer; user-select: none;">
+			<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
+				<span @click="viewXPack( path.node )">{{ path.name }}</span>
+				<span v-if="idx !== graphViewPath.length - 1"> > </span>
+			</span>
+		</nav>
 
-		<button type="button" style="position: fixed; cursor: pointer; right: 0px;" @click="packSelectedNodes">PACK</button>
+		<div style="position: absolute; cursor: pointer; right: 10px; z-index: 10; user-select: none;" @click="packSelectedNodes">PACK</div>
 
+		<div ref="nodeGraphRoot" id="nodeGraphRoot">
+
+			<div ref="nodeGraphBG" class="nodeGraphBG"></div>
+
+			<div ref="nodeGraphContainer" class="nodeGraphContainer">
+
+				<svg class="nodeContainerSvg">
+					<NodeGhostConnection></NodeGhostConnection>
+					<NodeConnection v-for="conn in graphView.connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
+				</svg>
+
+				<div class="nodeContainer">
+					<NodeModule v-for="node in graphView.nodes" :key="node.uuid"
+						:node="node"
+						:selected="isNodeSelected( node )"
+					></NodeModule>
+				</div>
+
+			</div>
+
+			<SelectionBox :enable="enableSelectionBox"></SelectionBox>
+
+		</div>
 	</div>
 </template>
 
@@ -36,12 +50,13 @@ import SelectionBox from './SelectionBox.vue'
 import importGraphConfiguration from './import.svc.js'
 import toposort from 'toposort'
 import { XPack, RouterNode } from './xpack.js'
+import TreeView from './TreeView.vue'
 
 export default {
 	name: 'NodeGraph',
-	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
+	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection, TreeView },
 	props: {
-		graph: { default: () => { return { nodes: [], connections: [] } } }
+		graph: { default: () => { return new XPack() } }
 	},
 	provide() {
 		return {
@@ -52,6 +67,9 @@ export default {
 		return {
 			selectedNodes: [],
 			tempConnectionPair: [ null, null ],
+			graphView: new XPack(),
+			graphViewPath: [],
+			graphViewTree: new XPack(),
 			vpd: {
 				minZoom: 0.2,
 				zoomFactor: 1.0,
@@ -65,7 +83,10 @@ export default {
 	},
 	methods: {
 		init() {
-			this.graph.connections.forEach( pair => this.connectXPackIo( ...pair ) )
+			this.graphView = this.graph
+			this.graphViewPath = [ { name: 'Root', node: this.graph } ]
+			this.graphViewTree = this.graph
+			this.graphView.connections.forEach( pair => this.connectXPackIo( ...pair ) )
 			this.$EventBus.$emit( 'node-record-prev-pos' )
 		},
 		getContainerMatrix() {
@@ -107,7 +128,6 @@ export default {
 			if ( !this.isNodeSelected( node ) ) {
 				this.selectedNodes.push( node )
 			}
-			this.graph.nodes = [ ...this.graph.nodes.filter( n => n !== node ), this.graph.nodes[ this.graph.nodes.indexOf( node ) ] ] // bring selected node to front
 		},
 		removeNodeFromSelection( node ) {
 			this.selectedNodes = this.selectedNodes.filter( n => n !== node )
@@ -116,10 +136,10 @@ export default {
 			return !!this.selectedNodes.find( n => n.uuid === node.uuid )
 		},
 		isConnectionExists( opt, inp ) {
-			return !!this.graph.connections.find( io => io[ 0 ] === opt && io[ 1 ] === inp )
+			return !!this.graphView.connections.find( io => io[ 0 ] === opt && io[ 1 ] === inp )
 		},
 		isConnectionCyclic( opt, inp ) {
-			let testCase = [ ...this.graph.connections, [ opt, inp ] ]
+			let testCase = [ ...this.graphView.connections, [ opt, inp ] ]
 			try { this.computeToposort( testCase ) }
 			catch( ex ) { return true }
 			return false
@@ -168,7 +188,7 @@ export default {
 			}
 			io.proxyOutput = null
 			io.free = true
-			this.graph.connections = this.graph.connections.filter( pair => pair[ 1 ] !== io )
+			this.graphView.connections = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
 		},
 		connectXPackIo( opt, inp ) {
 			this.disconnectXPackByInput( inp )
@@ -178,7 +198,7 @@ export default {
 			if ( endPointOutput ) {
 				endPointInput.forEach( eInp => eInp.connect( endPointOutput ) )
 			}
-			this.graph.connections.push( [ opt, inp ] )
+			this.graphView.connections.push( [ opt, inp ] )
 		},
 		packSelectedNodes() {
 			let nodes = this.selectedNodes
@@ -188,13 +208,13 @@ export default {
 					opt.input.forEach( inp => this.disconnectXPackByInput( inp ) )
 				} )
 			} )
-			let xp = new XPack( nodes )
+			let xp = new XPack( nodes, this.graphView )
 			xp.addInput( 'A', 'B', 'C', 'D' )
 			xp.addOutput( '1', '2', '3', '4' )
 			xp.uStreamRouter.addOutput( 'A', 'B', 'C', 'D' )
 			xp.dStreamRouter.addInput( '1', '2', '3', '4' )
-			this.graph.nodes = this.graph.nodes.filter( n => nodes.indexOf( n ) < 0 )
-			this.graph.nodes.push( xp )
+			this.graphView.nodes = this.graphView.nodes.filter( n => nodes.indexOf( n ) < 0 )
+			this.graphView.nodes.push( xp )
 		},
 		traceProxyOutput( output ) {
 			// trace from output -> input(s), return array of input(s)
@@ -242,7 +262,31 @@ export default {
 			let endPointOutput = input.proxyOutput
 			if ( endPointOutput === null ) return null
 			return traceOutput( endPointOutput )
-		}
+		},
+		viewXPack( xpack ) {
+			this.graphView = xpack
+			this.graphViewPath = [ { name: 'Root', node: this.graph }, ...constructPath( xpack ) ]
+			this.graphViewTree = this.graph
+			function constructPath( xpack, path = [] ) {
+				if ( xpack.parent === null ) return path
+				else return constructPath( xpack.parent, [ {
+					name: `${xpack.name}-${xpack.uuid.slice( 0, 4 ).toUpperCase()}`,
+					node: xpack
+				}, ...path ] )
+			}
+		},
+		constructTree( node ) {
+			return parseTree( node )
+			function parseTree( node, tree = [] ) {
+				node.nodes.forEach( n => {
+					if ( n instanceof XPack && n.nodes.length > 0 )
+						tree.push( parseTree( n ) )
+					else if ( !( n instanceof RouterNode ) )
+						tree.push( { name: node.name, node: n } )
+				} )
+				return tree
+			}
+		},
 	},
 	created() {
 		this.$EventBus = this._provided.$EventBus
@@ -251,9 +295,11 @@ export default {
 		this.init()
 		this.$EventBus.$on( 'node-click', ev => {
 		} )
-		this.$EventBus.$on( 'node-dblclick', ev => {
-			this.$root.$emit( 'xpack-view', this.selectedNodes )
+		this.$EventBus.$on( 'node-dblclick', payload => {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
+			if ( payload.node instanceof XPack ) {
+				this.viewXPack( payload.node )
+			}
 		} )
 		this.$EventBus.$on( 'node-mousedown', payload => {
 			this.$EventBus.$emit( 'node-record-prev-pos' )
@@ -312,7 +358,7 @@ export default {
 				if ( ev.target.tagName !== 'BUTTON' &&
 						ev.button !== 1 && this.leftMouseHold
 					) {
-					let selecting = this.graph.nodes.filter( n => n._selecting )
+					let selecting = this.graphView.nodes.filter( n => n._selecting )
 					if ( !this.movingNode ) {
 						if ( selecting.length > 0 ) {
 							if ( ev.shiftKey ) {

@@ -34,8 +34,7 @@ export default {
 	},
 	data() {
 		return {
-			graph: { nodes: [], connections: [] },
-			xPackGraph1: { nodes: [], connections: [] },
+			graph: new XPack(),
 			selectedNodes: [],
 		}
 	},
@@ -50,15 +49,6 @@ export default {
 		this.importGraph()
 	},
 	mounted() {
-		this.$root.$on( 'xpack-view', nodes => {
-			this.selectedNodes = nodes
-			if ( nodes.length === 1 ) {
-				if ( nodes[ 0 ] instanceof XPack ) {
-					let xpack = nodes[ 0 ]
-					this.xPackGraph1 = xpack
-				}
-			}
-		} )
 		this.$root.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 		} )

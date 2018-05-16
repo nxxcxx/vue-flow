@@ -64,7 +64,7 @@ export default {
 			this.width = this.height = this.top = this.left = 0
 		},
 		select( l, t ) {
-			this.$parent.graph.nodes.forEach( n => {
+			this.$parent.graphView.nodes.forEach( n => {
 				if ( doRectIntersect( {
 					l,
 					t,
