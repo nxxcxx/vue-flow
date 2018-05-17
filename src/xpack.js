@@ -9,7 +9,8 @@ class RouterNode extends nodeFactory.Node {
 
 class XPack extends nodeFactory.Node {
 	constructor( nodes = [], parent = null ) {
-		super( 'XPack' )
+		super()
+		this.name = `XPack-${this.uuid.slice( 0, 4 ).toUpperCase()}`
 		this.parent = parent
 		this.nodes = []
 		this.connections = []

@@ -4,7 +4,7 @@
 		:class="{ selected, tmpSelected: node._selecting }"
 	>
 		<div class="header">
-			{{ node.name }}
+			{{ node.name }}&nbsp;<span style="float: right;">[{{ node.order }}]</span>
 		</div>
 		<div class="ioContainer">
 			<div class="inputColumn">

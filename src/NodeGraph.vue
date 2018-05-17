@@ -1,26 +1,26 @@
 <template>
 	<div>
 
-		<nav style="background: #181a1c; z-index: 10; position: absolute; left: 4px; top: 4px; padding: 0px 4px; cursor: pointer; user-select: none;">
-			<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
-				<span @click="viewXPack( path.node )">{{ path.name }}</span>
-				<span v-if="idx !== graphViewPath.length - 1"> > </span>
-			</span>
-		</nav>
+		<div style="width: calc(100% - 15px); position: absolute; padding: 0px 4px; z-index: 20; background: rgb(0, 0, 0); user-select: none;">
+			<nav style="display: inline-block; cursor: pointer;">
+				<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
+					<span @click="viewXPack( path.node )">{{ path.name }}</span>
+					<span v-if="idx !== graphViewPath.length - 1"> > </span>
+				</span>
 
-		<div style="background: #181a1c; padding: 0px 4px; position: absolute; cursor: pointer; right: 10px; top: 4px; z-index: 10; user-select: none;"
-		@click="packSelectedNodes">PACK</div>
-
-		<div style="background: #181a1c; padding: 0px 4px; position: absolute; cursor: pointer; right: 50px; top: 4px; z-index: 10; user-select: none;"
-		@click="normalizeView( graphView )">NORM VIEW</div>
+			</nav>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="packSelectedNodes">[PACK]</div>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="normalizeView( graphView )">[RESET_VIEW]</div>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="centerGraphInView">[CENTER_VIEW]</div>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="sort">[SORT]</div>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="parse">[PARSE]</div>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="step">[STEP]</div>
+			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="run">[RUN]</div>
+		</div>
 
 		<div ref="nodeGraphRoot" id="nodeGraphRoot">
 
 			<div ref="nodeGraphBG" class="nodeGraphBG"></div>
-
-			<!-- <div
-				style="width: 2000px; height: 100px; background: rgba(255, 0, 34, 0.56); position: absolute; left: -1000px;"
-			></div> -->
 
 			<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
@@ -117,6 +117,15 @@ export default {
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
 			this.vpd.zoomFactor = sf
 			this.$EventBus.$emit( 'vp-zoom' )
+			console.log( sf )
+		},
+		setZoomFactor( sf ) {
+			this.vpd.zoomFactor = sf
+			let mat = this.getContainerMatrix()
+			let nCont = $( this.$refs.nodeGraphContainer )
+			// TODO pan to center
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${0},${0})` )
+			this.$EventBus.$emit( 'vp-zoom' )
 		},
 		clearSelectedNodes() {
 			this.selectedNodes = []
@@ -193,8 +202,23 @@ export default {
 					opt.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
 				} )
 			} )
+			// calculate xpack position
+			let xpos = { x: 0, y: 0 }
+			let [ minX, maxX ] = [ Infinity, - Infinity ]
+			let [ minY, maxY ] = [ Infinity, - Infinity ]
+			nodes.forEach( n => {
+				xpos.x += n.position.x
+				xpos.y += n.position.y
+				minX = Math.min( minX, n.position.x )
+				maxX = Math.max( maxX, n.position.x )
+				minY = Math.min( minY, n.position.y )
+				maxY = Math.max( maxY, n.position.y )
+			} )
 			let parent = nodes[ 0 ].parent
 			let xp = new XPack( nodes )
+			xp.uStreamRouter.position = { x: minX - 100, y: minY }
+			xp.dStreamRouter.position = { x: maxX + 200, y: minY }
+			xp.position = { x: xpos.x / nodes.length, y: xpos.y / nodes.length }
 			xp.addInput( 'A', 'B', 'C', 'D' )
 			xp.addOutput( '1', '2', '3', '4' )
 			xp.uStreamRouter.addOutput( 'A', 'B', 'C', 'D' )
@@ -281,11 +305,86 @@ export default {
 			this.$EventBus.$emit( 'vp-zoom' )
 			$( this.$refs.nodeGraphRoot ).scrollLeft( 0 ).scrollTop( 0 )
 		},
+		centerGraphInView() {
+			let [ minX, maxX ] = [ Infinity, - Infinity ]
+			let [ minY, maxY ] = [ Infinity, - Infinity ]
+			this.graphView.nodes.forEach( n => {
+				minX = Math.min( minX, n.position.x )
+				maxX = Math.max( maxX, n.position.x )
+				minY = Math.min( minY, n.position.y )
+				maxY = Math.max( maxY, n.position.y )
+			} )
+			let dimension = { w: maxX - minX, h: maxY - minY }
+			// TODO set vp size
+			let vpDimension = { w: 783 - 150, h: 464 - 150 }
+			let size = Math.max( dimension.w, dimension.h )
+			let vpSize = Math.max( vpDimension.w, vpDimension.h )
+			if ( dimension.w < dimension.h )
+				vpSize = Math.min( vpDimension.w, vpDimension.h )
+			let scaleFactor = vpSize / size
+			console.log( scaleFactor )
+			this.setZoomFactor( scaleFactor )
+			$( this.$refs.nodeGraphRoot ).scrollLeft( minX * scaleFactor - 20 ).scrollTop( minY * scaleFactor - 20 )
+		},
+		sort() {
+			let rsort = ( graph ) => {
+				if ( !( graph.connections && graph.connections.length > 0 ) )
+					return
+				let ts = this.computeToposort( graph.connections )
+				graph.nodes.forEach( n => {
+					n.order = ts.indexOf( n.uuid )
+					rsort( n )
+				} )
+				graph.nodes.sort( ( a, b ) => a.order - b.order )
+				console.log( graph.name, graph.nodes )
+			}
+			rsort( this.graph )
+		},
+		parse() {
+			this.sort()
+			let p = ( graph ) => {
+				graph.nodes
+				.filter( n => n.order !== -1 )
+				.forEach( n => {
+					if ( n.constructor.name === 'Node' ) {
+						n.parse()
+					} else if ( n instanceof XPack ) {
+						exe( n )
+					}
+				} )
+			}
+			p( this.graph )
+		},
+		step() {
+			let exe = ( graph ) => {
+				graph.nodes
+				.filter( n => n.order !== -1 )
+				.forEach( n => {
+					if ( n.constructor.name === 'Node' ) {
+						let renderer = this.$parent.three.renderer
+						let injObj = {
+							renderer,
+							width: renderer.getSize().width,
+							height: renderer.getSize().height
+						}
+						n.execute( injObj )
+					} else if ( n instanceof XPack ) {
+						exe( n )
+					}
+				} )
+			}
+			exe( this.graph )
+		},
+		run() {
+			this.step()
+			window.requestAnimationFrame( this.run.bind( this ) )
+		},
 	},
 	created() {
 		this.$EventBus = this._provided.$EventBus
 	},
 	mounted() {
+		console.log( this.$parent )
 		this.init()
 		this.$EventBus.$on( 'node-click', ev => {
 		} )
@@ -435,8 +534,6 @@ export default {
 		width: 100%
 		left: 0px
 		top: 0px
-		// monkey patching https://stackoverflow.com/questions/15152712/css-positionfixed-inside-of-positionabsolute
-		transform: translateX( 0 )
 	.nodeGraphContainer
 		background-color: transparent
 		background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
@@ -444,8 +541,8 @@ export default {
 		overflow: visible
 		pointer-events: none
 		position: absolute
-		width: 2000px
-		height: 2000px
+		width: 5000px
+		height: 5000px
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 		user-select: none
@@ -460,8 +557,8 @@ export default {
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 	.nodeGraphBG
-		width: calc( 100% - 5px )
-		height: calc( 100% - 5px )
+		width: calc( 100% - 10px )
+		height: calc( 100% - 10px )
 		position: fixed
 		background: rgba( 0, 0, 0, 0 )
 		pointer-events: auto

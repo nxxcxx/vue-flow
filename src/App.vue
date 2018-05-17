@@ -14,13 +14,19 @@
 			</div>
 
 		</div>
-		<div id="right">
+		<div ref="rightView" id="right">
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph :graph="graph"></NodeGraph>
 			</div>
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph :graph="graph"></NodeGraph>
 			</div>
+
+			<canvas
+				ref="canvas" id="canvas"
+				style="pointer-events: none; width: 100%; height: 100%; position: absolute; top: 0px; left: 0px; transform-style: preserve-3d; z-index: 100;">
+			</canvas>
+
 		</div>
 	</div>
 </template>
@@ -43,6 +49,9 @@ export default {
 		return {
 			graph: new XPack(),
 			selectedNodes: [],
+			three: {
+				renderer: null
+			}
 		}
 	},
 	methods: {
@@ -52,11 +61,24 @@ export default {
 			this.graph.addNodes( importedGraph.nodes )
 			this.graph.addConnections( importedGraph.connections )
 		},
+		initTHREE() {
+			this.three.renderer = new THREE.WebGLRenderer( {
+				canvas: this.$refs.canvas,
+				alpha: true,
+				antialias: true
+			} )
+			$( window ).on( 'resize', () => {
+				let v = $( this.$refs.rightView )
+				this.three.renderer.setSize( v.width(), v.height() )
+				console.log( 'resize', this.three.renderer.getSize() )
+			} ).trigger( 'resize' )
+		}
 	},
 	created() {
 		this.importGraph()
 	},
 	mounted() {
+		this.initTHREE()
 		this.$root.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 		} )
