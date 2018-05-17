@@ -8,13 +8,13 @@
 		</div>
 		<div class="ioContainer">
 			<div class="inputColumn">
-				<NodeModuleIO v-for="input of node.input" :key="input.uuid" :io="input" type="input"></NodeModuleIO>
+				<NodeModuleIO v-for="input of node.input" :key="input.uuid" :io="input"></NodeModuleIO>
 			</div>
 
 			<div class="separator"></div>
 
 			<div class="outputColumn">
-				<NodeModuleIO v-for="output of node.output" :key="output.uuid" :io="output" type="output"></NodeModuleIO>
+				<NodeModuleIO v-for="output of node.output" :key="output.uuid" :io="output"></NodeModuleIO>
 			</div>
 		</div>
 
@@ -43,7 +43,7 @@ export default {
 		},
 		setPosition( x, y ) {
 			this.node.position = { x, y }
-			this.$emit( 'update-io-position' )
+			this.$emit( 'update-child-io-position' )
 		},
 		recordPrevPos() {
 			this.prevPos = $( this.$refs.nodeModule ).position() || this.prevPos
@@ -68,7 +68,7 @@ export default {
 			if ( node === this.node ) this.clearSelecting()
 		} )
 		this.$EventBus.$on( 'update-io-position', () => {
-			this.$emit( 'update-io-position' )
+			this.$emit( 'update-child-io-position' )
 		} )
 		this.$EventBus.$on( 'node-record-prev-pos', () => {
 			this.recordPrevPos()

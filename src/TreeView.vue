@@ -24,7 +24,7 @@ export default {
 	},
 	computed: {
 		indent() {
-			return ' '.repeat( this.depth )
+			return '  '.repeat( this.depth )
 		}
 	},
 	methods: {

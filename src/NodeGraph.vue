@@ -1,10 +1,6 @@
 <template>
 	<div>
 
-		<div style="font-size: 0.9em; padding: 5px; position: absolute; top: 25px; left: 10px; z-index: 10; pointer-events: none; background: rgba(200, 200, 200, 0.025);">
-			<TreeView :xpack="graphViewTree" :depth="0"></TreeView>
-		</div>
-
 		<nav style="background: #181a1c; z-index: 10; position: absolute; left: 4px; top: 4px; padding: 0px 4px; cursor: pointer; user-select: none;">
 			<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
 				<span @click="viewXPack( path.node )">{{ path.name }}</span>
@@ -45,7 +41,7 @@
 		</div>
 
 		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
-		
+
 	</div>
 </template>
 
@@ -59,11 +55,10 @@ import SelectionBox from './SelectionBox.vue'
 import importGraphConfiguration from './import.svc.js'
 import toposort from 'toposort'
 import { XPack, RouterNode } from './xpack.js'
-import TreeView from './TreeView.vue'
 
 export default {
 	name: 'NodeGraph',
-	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection, TreeView },
+	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
 	props: [ 'graph' ],
 	provide() {
 		return {
@@ -75,7 +70,6 @@ export default {
 			selectedNodes: [],
 			tempConnectionPair: [ null, null ],
 			graphView: new XPack(),
-			graphViewTree: new XPack(),
 			graphViewPath: [],
 			vpd: {
 				minZoom: 0.2,
@@ -92,7 +86,6 @@ export default {
 		init() {
 			this.graphView = this.graph
 			this.graphViewPath = [ { name: 'Root', node: this.graph } ]
-			this.graphViewTree = this.graph
 			this.graphView.connections.forEach( pair => this.connectXPackIo( ...pair ) )
 			this.$EventBus.$emit( 'node-record-prev-pos' )
 		},
@@ -259,25 +252,12 @@ export default {
 		viewXPack( xpack ) {
 			this.graphView = xpack
 			this.graphViewPath = [ { name: 'Root', node: this.graph }, ...constructPath( xpack ) ]
-			this.graphViewTree = this.graph
 			function constructPath( xpack, path = [] ) {
 				if ( xpack.parent === null ) return path
 				else return constructPath( xpack.parent, [ {
 					name: `${xpack.name}-${xpack.uuid.slice( 0, 4 ).toUpperCase()}`,
 					node: xpack
 				}, ...path ] )
-			}
-		},
-		constructTree( node ) {
-			return parseTree( node )
-			function parseTree( node, tree = [] ) {
-				node.nodes.forEach( n => {
-					if ( n instanceof XPack && n.nodes.length > 0 )
-						tree.push( parseTree( n ) )
-					else if ( !( n instanceof RouterNode ) )
-						tree.push( { name: node.name, node: n } )
-				} )
-				return tree
 			}
 		},
 		normalizeView( graph ) {
@@ -287,12 +267,19 @@ export default {
 				mx = Math.min( mx, n.position.x )
 				my = Math.min( my, n.position.y )
 			} )
+			let offset = 50
 			graph.nodes.forEach( n => {
 				this.$EventBus.$emit( 'update-node-position', {
-				node: n,
-				pos: { x: n.position.x - mx, y: n.position.y - my }
+					node: n,
+					pos: { x: n.position.x - mx + offset, y: n.position.y - my + offset }
+				} )
 			} )
-			} )
+			// normalize pan & zoom
+			let nCont = $( this.$refs.nodeGraphContainer )
+			nCont.css( 'transform', `matrix(1,0,0,1,0,0)` )
+			this.vpd.zoomFactor = 1.0
+			this.$EventBus.$emit( 'vp-zoom' )
+			$( this.$refs.nodeGraphRoot ).scrollLeft( 0 ).scrollTop( 0 )
 		},
 	},
 	created() {
@@ -457,8 +444,8 @@ export default {
 		overflow: visible
 		pointer-events: none
 		position: absolute
-		width: 20000px
-		height: 20000px
+		width: 2000px
+		height: 2000px
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 		user-select: none

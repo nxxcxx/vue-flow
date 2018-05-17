@@ -8,6 +8,11 @@
 				[]
 			</div>
 			<NodeEditor></NodeEditor>
+
+			<div style="font-size: 0.9em; padding: 5px; background: rgba(200, 200, 200, 0.025);">
+				<TreeView :xpack="graph" :depth="0"></TreeView>
+			</div>
+
 		</div>
 		<div id="right">
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
@@ -25,12 +30,14 @@ import NodeGraph from './NodeGraph.vue'
 import NodeEditor from './NodeEditor.vue'
 import importGraphConfiguration from './import.svc.js'
 import { XPack } from './xpack.js'
+import TreeView from './TreeView.vue'
 
 export default {
 	name: 'app',
 	components: {
 		NodeGraph,
-		NodeEditor
+		NodeEditor,
+		TreeView
 	},
 	data() {
 		return {
@@ -100,4 +107,6 @@ export default {
 		background: $dz
 	::-webkit-scrollbar-thumb
 		background: $w1
+	::-webkit-scrollbar-thumb:active
+			background: $g0
 </style>

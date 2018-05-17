@@ -18,25 +18,28 @@
 export default {
 	name: 'NodeModuleIO',
 	inject: [ '$EventBus' ],
-	props: [ 'type', 'io' ],
+	props: [ 'io' ],
 	data() {
 		return {
-			selected: false,
+			selected: false
 		}
 	},
 	methods: {
-		isInput() { return this.type === 'input' },
-		isOutput() { return this.type === 'output' },
+		isInput() { return this.io.type === 1 },
+		isOutput() { return this.io.type === 0 },
 		updatePosition() {
-			if ( !this.$refs.ioPort ) return
-			let port = $( this.$refs.ioPort )
-			, [ woff, hoff ] = [ ( port.width() + 1.0 ) * ( this.io.type === 0 ? 1 : 0 ) , port.height() * 0.5 + 0.5 ]
-			, off = port.offset()
-			, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
-			, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
-			, mat = this.$parent.$parent.getContainerMatrix()
-			this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + woff
-			this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hoff
+			// pos calculation depends on post-update DOM state, $nexTick is required
+			this.$nextTick( () => {
+				if ( !this.$refs.ioPort ) return
+				let port = $( this.$refs.ioPort )
+				, [ woff, hoff ] = [ ( port.width() + 1.0 ) * ( this.io.type === 0 ? 1 : 0 ) , port.height() * 0.5 + 0.5 ]
+				, off = port.offset()
+				, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
+				, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
+				, mat = this.$parent.$parent.getContainerMatrix()
+				this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + woff
+				this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hoff
+			} )
 		},
 		debug() {
 			console.log( this.io, `${this.io.name} [${this.io.parent.name}]` )
@@ -58,7 +61,7 @@ export default {
 	},
 	mounted() {
 		this.updatePosition()
-		this.$parent.$on( 'update-io-position', () => {
+		this.$parent.$on( 'update-child-io-position', () => {
 			this.updatePosition()
 		} )
 		this.$EventBus.$on( 'vp-zoom', () => {
