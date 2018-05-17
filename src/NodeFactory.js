@@ -33,14 +33,23 @@ class Input extends Connection {
 			output.proxyInput.push( this )
 		output.free = false
 	}
+	updatePortAvailability() {
+		if ( this.proxyOutput === null ) this.free = true
+		else this.free = false
+	}
 	disconnect() {
 		if ( this.output ) {
-			let i = this.output.input.indexOf( this )
-			if ( i > -1 ) this.output.input.splice( i, 1 )
-			if ( this.output.input.length === 0 ) this.output.free = true
+			this.output.disconnectProxyInput( this )
 		}
 		this.output = null
-		this.free = true
+		this.updatePortAvailability()
+	}
+	disconnectProxy() {
+		this.proxyOutput = null
+		if ( this.proxyOutput ) {
+			this.proxyOutput.disconnectProxyInput( this )
+		}
+		this.updatePortAvailability()
 	}
 	retrieveData() {
 		return this.output === null ? null : this.output.data
@@ -57,6 +66,14 @@ class Output extends Connection {
 	}
 	flush() {
 		this.data = null
+	}
+	updatePortAvailability() {
+		if ( this.proxyInput.length === 0 ) this.free = true
+		else this.free = false
+	}
+	disconnectProxyInput( input ) {
+		this.proxyInput = this.proxyInput.filter( inp => inp !== input )
+		this.updatePortAvailability()
 	}
 }
 

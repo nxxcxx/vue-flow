@@ -159,36 +159,29 @@ export default {
 		},
 		disconnectXPackByInput( io ) {
 			if ( io.type !== 1 ) throw new Error( 'disconnectXPackByInput accept only input type' )
-			if ( io.parent.constructor.name === 'Node' ) {
-				if ( io.proxyOutput ) {
-					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
-					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
-				}
-				io.disconnect()
-			} else if ( io.parent instanceof XPack ) {
-				let rOutput = io.parent.uStreamRouter.output.find( opt => opt.name === io.name )
+			let input = io
+			if ( input.parent.constructor.name === 'Node' ) {
+				input.disconnect()
+			} else if ( input.parent instanceof XPack ) {
+				let rOutput = input.parent.uStreamRouter.output.find( opt => opt.name === input.name )
 				let endPointInput = this.traceProxyOutput( rOutput )
-				if ( io.proxyOutput ) {
-					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
-					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
-				}
 				if ( endPointInput ) {
 					endPointInput.forEach( inp => inp.disconnect() )
 				}
-			} else if ( io.parent instanceof RouterNode ) {
-				let xOutput = io.parent.xpack.output.find( opt => opt.name === io.name )
+			} else if ( input.parent instanceof RouterNode ) {
+				let xOutput = input.parent.xpack.output.find( opt => opt.name === input.name )
 				let endPointInput = this.traceProxyOutput( xOutput )
-				if ( io.proxyOutput ) {
-					io.proxyOutput.proxyInput = io.proxyOutput.proxyInput.filter( inp => inp !== io )
-					if ( io.proxyOutput.proxyInput.length === 0 ) io.proxyOutput.free = true
-				}
+
 				if ( endPointInput ) {
 					endPointInput.forEach( inp => inp.disconnect() )
 				}
 			}
-			io.proxyOutput = null
-			io.free = true
-			this.graphView.connections = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
+			if ( input.proxyOutput ) {
+				input.proxyOutput.proxyInput = input.proxyOutput.proxyInput.filter( inp => inp !== input )
+				if ( input.proxyOutput.proxyInput.length === 0 ) input.proxyOutput.free = true
+			}
+			input.disconnectProxy()
+			this.graphView.connectinputns = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
 		},
 		connectXPackIo( opt, inp ) {
 			this.disconnectXPackByInput( inp )
