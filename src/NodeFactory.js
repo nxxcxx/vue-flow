@@ -18,37 +18,39 @@ class Input extends Connection {
 		this.type = 1
 	}
 	connect( output ) {
-		if ( !( output instanceof Output ) ) return
+		if ( !( output instanceof Output ) ) throw new Error( 'invalid connection' )
 		this.output = output
-		this.free = false
 		if ( output.input.indexOf( this ) < 0 )
 			output.input.push( this )
-		output.free = false
+		this.updatePortAvailability()
+		output.updatePortAvailability()
 	}
 	connectProxy( output ) {
-		if ( !( output instanceof Output ) ) return
+		if ( !( output instanceof Output ) ) throw new Error( 'invalid connection' )
 		this.proxyOutput = output
-		this.free = false
 		if ( output.proxyInput.indexOf( this ) < 0 )
 			output.proxyInput.push( this )
-		output.free = false
+		this.updatePortAvailability()
+		output.updatePortAvailability()
 	}
 	updatePortAvailability() {
-		if ( this.proxyOutput === null ) this.free = true
+		if ( this.proxyOutput === null && this.output === null ) this.free = true
 		else this.free = false
 	}
 	disconnect() {
 		if ( this.output ) {
-			this.output.disconnectProxyInput( this )
+			this.output.disconnectInput( this )
+			this.output.updatePortAvailability()
 		}
 		this.output = null
 		this.updatePortAvailability()
 	}
 	disconnectProxy() {
-		this.proxyOutput = null
 		if ( this.proxyOutput ) {
 			this.proxyOutput.disconnectProxyInput( this )
+			this.proxyOutput.updatePortAvailability()
 		}
+		this.proxyOutput = null
 		this.updatePortAvailability()
 	}
 	retrieveData() {
@@ -68,8 +70,12 @@ class Output extends Connection {
 		this.data = null
 	}
 	updatePortAvailability() {
-		if ( this.proxyInput.length === 0 ) this.free = true
+		if ( this.proxyInput.length === 0 && this.input.length === 0 ) this.free = true
 		else this.free = false
+	}
+	disconnectInput( input ) {
+		this.input = this.input.filter( inp => inp !== input )
+		this.updatePortAvailability()
 	}
 	disconnectProxyInput( input ) {
 		this.proxyInput = this.proxyInput.filter( inp => inp !== input )

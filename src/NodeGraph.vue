@@ -12,11 +12,19 @@
 			</span>
 		</nav>
 
-		<div style="background: #181a1c; padding: 0px 4px; position: absolute; cursor: pointer; right: 10px; top: 4px; z-index: 10; user-select: none;" @click="packSelectedNodes">PACK</div>
+		<div style="background: #181a1c; padding: 0px 4px; position: absolute; cursor: pointer; right: 10px; top: 4px; z-index: 10; user-select: none;"
+		@click="packSelectedNodes">PACK</div>
+
+		<div style="background: #181a1c; padding: 0px 4px; position: absolute; cursor: pointer; right: 50px; top: 4px; z-index: 10; user-select: none;"
+		@click="normalizeView( graphView )">NORM VIEW</div>
 
 		<div ref="nodeGraphRoot" id="nodeGraphRoot">
 
 			<div ref="nodeGraphBG" class="nodeGraphBG"></div>
+
+			<!-- <div
+				style="width: 2000px; height: 100px; background: rgba(255, 0, 34, 0.56); position: absolute; left: -1000px;"
+			></div> -->
 
 			<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
@@ -34,9 +42,10 @@
 
 			</div>
 
-			<SelectionBox :enable="enableSelectionBox"></SelectionBox>
-
 		</div>
+
+		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
+		
 	</div>
 </template>
 
@@ -55,9 +64,7 @@ import TreeView from './TreeView.vue'
 export default {
 	name: 'NodeGraph',
 	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection, TreeView },
-	props: {
-		graph: { default: () => { return new XPack() } }
-	},
+	props: [ 'graph' ],
 	provide() {
 		return {
 			$EventBus: new Vue()
@@ -68,8 +75,8 @@ export default {
 			selectedNodes: [],
 			tempConnectionPair: [ null, null ],
 			graphView: new XPack(),
-			graphViewPath: [],
 			graphViewTree: new XPack(),
+			graphViewPath: [],
 			vpd: {
 				minZoom: 0.2,
 				zoomFactor: 1.0,
@@ -158,30 +165,21 @@ export default {
 			)
 		},
 		disconnectXPackByInput( io ) {
-			if ( io.type !== 1 ) throw new Error( 'disconnectXPackByInput accept only input type' )
+			if ( io.type !== 1 ) throw new Error( 'invalid connection type' )
 			let input = io
 			if ( input.parent.constructor.name === 'Node' ) {
 				input.disconnect()
 			} else if ( input.parent instanceof XPack ) {
 				let rOutput = input.parent.uStreamRouter.output.find( opt => opt.name === input.name )
 				let endPointInput = this.traceProxyOutput( rOutput )
-				if ( endPointInput ) {
-					endPointInput.forEach( inp => inp.disconnect() )
-				}
+				if ( endPointInput ) endPointInput.forEach( inp => inp.disconnect() )
 			} else if ( input.parent instanceof RouterNode ) {
 				let xOutput = input.parent.xpack.output.find( opt => opt.name === input.name )
 				let endPointInput = this.traceProxyOutput( xOutput )
-
-				if ( endPointInput ) {
-					endPointInput.forEach( inp => inp.disconnect() )
-				}
-			}
-			if ( input.proxyOutput ) {
-				input.proxyOutput.proxyInput = input.proxyOutput.proxyInput.filter( inp => inp !== input )
-				if ( input.proxyOutput.proxyInput.length === 0 ) input.proxyOutput.free = true
+				if ( endPointInput ) endPointInput.forEach( inp => inp.disconnect() )
 			}
 			input.disconnectProxy()
-			this.graphView.connectinputns = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
+			this.graphView.connections = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
 		},
 		connectXPackIo( opt, inp ) {
 			this.disconnectXPackByInput( inp )
@@ -281,6 +279,20 @@ export default {
 				} )
 				return tree
 			}
+		},
+		normalizeView( graph ) {
+			// normalize nodes position
+			let [ mx, my ] = [ Infinity, Infinity ]
+			graph.nodes.forEach( n => {
+				mx = Math.min( mx, n.position.x )
+				my = Math.min( my, n.position.y )
+			} )
+			graph.nodes.forEach( n => {
+				this.$EventBus.$emit( 'update-node-position', {
+				node: n,
+				pos: { x: n.position.x - mx, y: n.position.y - my }
+			} )
+			} )
 		},
 	},
 	created() {
@@ -436,6 +448,8 @@ export default {
 		width: 100%
 		left: 0px
 		top: 0px
+		// monkey patching https://stackoverflow.com/questions/15152712/css-positionfixed-inside-of-positionabsolute
+		transform: translateX( 0 )
 	.nodeGraphContainer
 		background-color: transparent
 		background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
@@ -443,8 +457,8 @@ export default {
 		overflow: visible
 		pointer-events: none
 		position: absolute
-		width: 5000px
-		height: 5000px
+		width: 20000px
+		height: 20000px
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 		user-select: none
@@ -459,8 +473,8 @@ export default {
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 	.nodeGraphBG
-		width: calc( 70% - 15px )
-		height: calc( 100% - 15px )
+		width: calc( 100% - 5px )
+		height: calc( 100% - 5px )
 		position: fixed
 		background: rgba( 0, 0, 0, 0 )
 		pointer-events: auto

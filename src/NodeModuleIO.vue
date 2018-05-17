@@ -58,7 +58,7 @@ export default {
 	},
 	mounted() {
 		this.updatePosition()
-		this.$parent.$on( 'update-io-position', uuid => {
+		this.$parent.$on( 'update-io-position', () => {
 			this.updatePosition()
 		} )
 		this.$EventBus.$on( 'vp-zoom', () => {

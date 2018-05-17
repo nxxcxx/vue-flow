@@ -43,6 +43,7 @@ export default {
 		},
 		setPosition( x, y ) {
 			this.node.position = { x, y }
+			this.$emit( 'update-io-position' )
 		},
 		recordPrevPos() {
 			this.prevPos = $( this.$refs.nodeModule ).position() || this.prevPos
@@ -51,7 +52,6 @@ export default {
 			let zf = this.$parent.vpd.zoomFactor
 			, [ x, y ] = [ ( this.prevPos.left + dx ) / zf, ( this.prevPos.top + dy ) / zf ]
 			this.setPosition( x, y )
-			this.$emit( 'update-io-position', this.node.uuid )
 		},
 		updateDimension() {
 			let w = $( this.$refs.nodeModule ).outerWidth()
@@ -68,15 +68,19 @@ export default {
 			if ( node === this.node ) this.clearSelecting()
 		} )
 		this.$EventBus.$on( 'update-io-position', () => {
-			this.$emit( 'update-io-position', this.node.uuid )
+			this.$emit( 'update-io-position' )
 		} )
 		this.$EventBus.$on( 'node-record-prev-pos', () => {
 			this.recordPrevPos()
 		} )
-		this.$EventBus.$on( 'node-move', meta => {
-			if ( meta.nodes.indexOf( this.node ) >= 0 ) {
-				this.moveByUnit( meta.delta.dx, meta.delta.dy )
+		this.$EventBus.$on( 'node-move', payload => {
+			if ( payload.nodes.indexOf( this.node ) >= 0 ) {
+				this.moveByUnit( payload.delta.dx, payload.delta.dy )
 			}
+		} )
+		this.$EventBus.$on( 'update-node-position', payload => {
+			if ( payload.node === this.node )
+				this.setPosition( payload.pos.x, payload.pos.y )
 		} )
 		$( this.$refs.nodeModule )
 			.on( 'click', ev => {
