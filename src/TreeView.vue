@@ -1,7 +1,8 @@
 <template>
 	<div style="user-select: none;">
 		<div @click="toggleExpandTree" :style="{ 'margin-left': `${indent}px` }">
-			<div>{{ depth !== 0 ? '└─' : '' }} {{ xpack.name }}</div>
+			<!-- <div>{{ depth !== 0 ? `└${expand ? '─' : '+'}` : '' }} {{ xpack.name }}</div> -->
+			<div>{{ depth !== 0 ? `${expand ? '-' : '+'}` : '' }} {{ xpack.name }}</div>
 		</div>
 		<TreeView
 			v-show="expand"
@@ -36,7 +37,8 @@ export default {
 			return !( xpack instanceof RouterNode )
 		},
 		toggleExpandTree() {
-			this.expand = !this.expand
+			if ( this.xpack.nodes.length > 0 )
+				this.expand = !this.expand
 		}
 	},
 }
