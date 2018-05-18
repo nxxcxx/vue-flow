@@ -1,7 +1,10 @@
 <template>
-	<div>
-		<pre style="margin: 0px;">{{ indent }} {{ depth !== 0 ? '└─' : '' }} {{ xpack.name }}</pre>
+	<div style="user-select: none;">
+		<div @click="toggleExpandTree" :style="{ 'margin-left': `${indent}px` }">
+			<div>{{ depth !== 0 ? '└─' : '' }} {{ xpack.name }}</div>
+		</div>
 		<TreeView
+			v-show="expand"
 			v-for="xp in xpack.nodes"
 			v-if="shouldRender( xp )"
 			:key="xp.uuid"
@@ -20,20 +23,22 @@ export default {
 	props: [ 'xpack', 'depth' ],
 	data() {
 		return {
+			expand: true
 		}
 	},
 	computed: {
 		indent() {
-			return '  '.repeat( this.depth )
-		}
+			return 10 * this.depth
+		},
 	},
 	methods: {
 		shouldRender( xpack ) {
 			return !( xpack instanceof RouterNode )
 		},
+		toggleExpandTree() {
+			this.expand = !this.expand
+		}
 	},
-	mounted() {
-	}
 }
 </script>
 

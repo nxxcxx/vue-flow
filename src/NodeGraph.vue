@@ -188,17 +188,57 @@ export default {
 			if ( endPointOutput ) {
 				endPointInput.forEach( eInp => eInp.connect( endPointOutput ) )
 			}
-			this.graphView.connections.push( [ opt, inp ] )
+			let parent = inp.parent.parent || opt.parent.parent
+			parent.connections.push( [ opt, inp ] )
 		},
 		packSelectedNodes() {
 			let nodes = this.selectedNodes
+
+
+			/*
+			find output x not in selection that is connected to input y in selection
+			disconnect output x from input y
+			connect output x to input u of xpack
+			connect output a of stream to input y
+			*/
+
+			let incomingConnections = []
 			nodes.forEach( n => {
-				n.input.forEach( inp => this.disconnectXPackByInput( inp ) )
-				n.output.forEach( opt => {
-					opt.input.forEach( inp => this.disconnectXPackByInput( inp ) )
-					opt.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
+				n.input.forEach( inp => {
+					if ( inp.proxyOutput ) {
+						let parent = inp.proxyOutput.parent
+						let inSelection = nodes.indexOf( parent ) >= 0
+						if ( !inSelection ) {
+							incomingConnections.push( inp )
+						}
+					}
 				} )
 			} )
+
+			let outgoingConnections = []
+			nodes.forEach( n => {
+				n.output.forEach( opt => {
+					opt.proxyInput.forEach( inp => {
+						let parent = inp.parent
+						let inSelection = nodes.indexOf( parent ) >= 0
+						if ( !inSelection ) {
+							outgoingConnections.push( opt )
+						}
+					} )
+				} )
+			} )
+
+			console.log( 'incomingConnections', incomingConnections )
+			console.log( 'outgoingConnections', outgoingConnections )
+
+			// nodes.forEach( n => {
+			// 	n.input.forEach( inp => this.disconnectXPackByInput( inp ) )
+			// 	n.output.forEach( opt => {
+			// 		opt.input.forEach( inp => this.disconnectXPackByInput( inp ) )
+			// 		opt.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
+			// 	} )
+			// } )
+
 			// calculate xpack position
 			let xpos = { x: 0, y: 0 }
 			let [ minX, maxX ] = [ Infinity, - Infinity ]
@@ -212,14 +252,52 @@ export default {
 				maxY = Math.max( maxY, n.position.y )
 			} )
 			let parent = nodes[ 0 ].parent
+
+			// create xpack
 			let xp = new XPack( nodes )
 			xp.uStreamRouter.position = { x: minX - 100, y: minY }
 			xp.dStreamRouter.position = { x: maxX + 200, y: minY }
 			xp.position = { x: xpos.x / nodes.length, y: xpos.y / nodes.length }
-			xp.addInput( 'A', 'B', 'C', 'D' )
-			xp.addOutput( '1', '2', '3', '4' )
-			xp.uStreamRouter.addOutput( 'A', 'B', 'C', 'D' )
-			xp.dStreamRouter.addInput( '1', '2', '3', '4' )
+
+			incomingConnections.forEach( inp => {
+				let xIn = xp.addInput( inp.name )
+				let uOut = xp.uStreamRouter.addOutput( inp.name )
+				this.connectXPackIo( inp.proxyOutput, xIn )
+				this.connectXPackIo( uOut, inp )
+			} )
+
+			outgoingConnections.forEach( opt => {
+				let xOut = xp.addOutput( opt.name )
+				let dIn = xp.dStreamRouter.addInput( opt.name )
+				opt.proxyInput.forEach( pInp => {
+					this.connectXPackIo( xOut, pInp )
+				} )
+				this.connectXPackIo( opt, dIn )
+			} )
+
+			// move all inner selection connection to xpack
+			let innerConn = []
+			nodes.forEach( n => {
+				n.input.forEach( inp => {
+					let opt = inp.proxyOutput
+					if ( inp && opt ) {
+						let inpInSelection = nodes.indexOf( inp.parent ) >= 0
+						let optInSelection = nodes.indexOf( opt.parent ) >= 0
+						if ( inpInSelection && optInSelection ) {
+							innerConn.push( [ opt, inp ] )
+						}
+					}
+				} )
+			} )
+			// add inner conn to xpack
+			xp.connections = [ ...xp.connections, ...innerConn ]
+			// remove inner conn from parent
+			parent.connections = parent.connections.filter( pairX => {
+				return innerConn.find( pairY => pairX[ 0 ] === pairY[ 0 ] && pairX[ 1 ] === pairY[ 1 ]  ) === undefined
+			} )
+
+
+
 			parent.removeNodes( nodes )
 			parent.addNodes( [ xp ] )
 		},

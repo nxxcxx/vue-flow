@@ -157,15 +157,16 @@ class Node extends Executable {
 			this.connections.push( c )
 		} )
 	}
-	addInput() {
-		for ( let arg of arguments ) {
-			this.input.push( new Input( arg, this ) )
-		}
+	addInput( name ) {
+		let inp = new Input( name, this )
+		this.input.push( inp )
+		return inp
 	}
-	addOutput() {
-		for ( let arg of arguments ) {
-			this.output.push( new Output( arg, this ) )
-		}
+	addOutput( name ) {
+		let opt = new Output( name, this )
+		console.log( opt )
+		this.output.push( opt )
+		return opt
 	}
 	flushOutput() {
 		this.scope.flush.call( this.scope )
