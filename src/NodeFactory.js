@@ -164,7 +164,6 @@ class Node extends Executable {
 	}
 	addOutput( name ) {
 		let opt = new Output( name, this )
-		console.log( opt )
 		this.output.push( opt )
 		return opt
 	}

@@ -178,7 +178,10 @@ export default {
 				if ( endPointInput ) endPointInput.forEach( inp => inp.disconnect() )
 			}
 			input.disconnectProxy()
-			this.graphView.connections = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
+			// TODO remove should be relative to parent
+			input.parent.parent.connections = input.parent.parent.connections.filter( pair => pair[ 1 ] !== io )
+			// console.log( input.parent.parent )
+			// this.graphView.connections = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
 		},
 		connectXPackIo( opt, inp ) {
 			this.disconnectXPackByInput( inp )
@@ -188,20 +191,13 @@ export default {
 			if ( endPointOutput ) {
 				endPointInput.forEach( eInp => eInp.connect( endPointOutput ) )
 			}
-			let parent = inp.parent.parent || opt.parent.parent
+			let parent = inp.parent.parent
 			parent.connections.push( [ opt, inp ] )
 		},
 		packSelectedNodes() {
 			let nodes = this.selectedNodes
 
-
-			/*
-			find output x not in selection that is connected to input y in selection
-			disconnect output x from input y
-			connect output x to input u of xpack
-			connect output a of stream to input y
-			*/
-
+			// find connections that are connected from outside of selection
 			let incomingConnections = []
 			nodes.forEach( n => {
 				n.input.forEach( inp => {
@@ -228,17 +224,6 @@ export default {
 				} )
 			} )
 
-			console.log( 'incomingConnections', incomingConnections )
-			console.log( 'outgoingConnections', outgoingConnections )
-
-			// nodes.forEach( n => {
-			// 	n.input.forEach( inp => this.disconnectXPackByInput( inp ) )
-			// 	n.output.forEach( opt => {
-			// 		opt.input.forEach( inp => this.disconnectXPackByInput( inp ) )
-			// 		opt.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
-			// 	} )
-			// } )
-
 			// calculate xpack position
 			let xpos = { x: 0, y: 0 }
 			let [ minX, maxX ] = [ Infinity, - Infinity ]
@@ -254,29 +239,46 @@ export default {
 			let parent = nodes[ 0 ].parent
 
 			// create xpack
-			let xp = new XPack( nodes )
+			let xp = new XPack()
+			xp.parent = parent
 			xp.uStreamRouter.position = { x: minX - 100, y: minY }
 			xp.dStreamRouter.position = { x: maxX + 200, y: minY }
 			xp.position = { x: xpos.x / nodes.length, y: xpos.y / nodes.length }
 
+			// create io
 			incomingConnections.forEach( inp => {
-				let xIn = xp.addInput( inp.name )
-				let uOut = xp.uStreamRouter.addOutput( inp.name )
-				this.connectXPackIo( inp.proxyOutput, xIn )
-				this.connectXPackIo( uOut, inp )
+				if ( xp.input.find( xin => xin.name === inp.name ) === undefined )
+					xp.addInput( inp.name )
+				if ( xp.uStreamRouter.output.find( uout => uout.name === inp.name ) === undefined )
+					xp.uStreamRouter.addOutput( inp.name )
 			} )
 
 			outgoingConnections.forEach( opt => {
-				let xOut = xp.addOutput( opt.name )
-				let dIn = xp.dStreamRouter.addInput( opt.name )
-				opt.proxyInput.forEach( pInp => {
-					this.connectXPackIo( xOut, pInp )
-				} )
-				this.connectXPackIo( opt, dIn )
+				if ( xp.output.find( xout => xout.name === opt.name ) === undefined )
+					xp.addOutput( opt.name )
+				if ( xp.dStreamRouter.input.find( din => din.name === opt.name ) === undefined )
+					xp.dStreamRouter.addInput( opt.name )
 			} )
 
-			// move all inner selection connection to xpack
-			let innerConn = []
+			// create reference connection state ( io connection mutate proxy state )
+			let connectionRef = []
+			incomingConnections.forEach( inp => {
+				let uopt = xp.uStreamRouter.output.find( uso => uso.name === inp.name )
+				connectionRef.push( [ uopt, inp ] )
+				let xinp = xp.input.find( xinp => xinp.name === inp.name )
+				connectionRef.push( [ inp.proxyOutput, xinp ] )
+			} )
+			outgoingConnections.forEach( opt => {
+				let dinp = xp.dStreamRouter.input.find( dsi => dsi.name === opt.name )
+				connectionRef.push( [ opt, dinp ] )
+				let xopt = xp.output.find( xopt => xopt.name === opt.name )
+				opt.proxyInput.forEach( inp => {
+					connectionRef.push( [ xopt, inp ] )
+				} )
+			} )
+
+			// inner connection reference
+			let innerConnRef = []
 			nodes.forEach( n => {
 				n.input.forEach( inp => {
 					let opt = inp.proxyOutput
@@ -284,22 +286,44 @@ export default {
 						let inpInSelection = nodes.indexOf( inp.parent ) >= 0
 						let optInSelection = nodes.indexOf( opt.parent ) >= 0
 						if ( inpInSelection && optInSelection ) {
-							innerConn.push( [ opt, inp ] )
+							innerConnRef.push( [ opt, inp ] )
 						}
 					}
 				} )
 			} )
-			// add inner conn to xpack
-			xp.connections = [ ...xp.connections, ...innerConn ]
-			// remove inner conn from parent
-			parent.connections = parent.connections.filter( pairX => {
-				return innerConn.find( pairY => pairX[ 0 ] === pairY[ 0 ] && pairX[ 1 ] === pairY[ 1 ]  ) === undefined
+
+			// delete old inner connection
+			innerConnRef.forEach( pair => {
+				this.disconnectXPackByInput( pair[ 1 ] )
 			} )
 
+			// delete old connections
+			incomingConnections.forEach( inp => {
+				this.disconnectXPackByInput( inp )
+			} )
+			outgoingConnections.forEach( opt => {
+				opt.proxyInput.forEach( inp => {
+					this.disconnectXPackByInput( inp )
+				} )
+			} )
 
-
+			// remove selected nodes from parent
 			parent.removeNodes( nodes )
+			// add nodes to xpack
+			xp.addNodes( nodes )
+
+			// new connection
+			connectionRef.forEach( pair => {
+				this.connectXPackIo( ...pair )
+			} )
+
+			// reconnect inner connection
+			innerConnRef.forEach( pair => {
+				this.connectXPackIo( ...pair )
+			} )
+
 			parent.addNodes( [ xp ] )
+
 		},
 		traceProxyOutput( output ) {
 			// trace from output -> input(s), return array of input(s)
@@ -344,9 +368,8 @@ export default {
 				}
 			}
 			if ( input === null ) return null
-			let endPointOutput = input.proxyOutput
-			if ( endPointOutput === null ) return null
-			return traceOutput( endPointOutput )
+			if ( input.proxyOutput === null ) return null
+			return traceOutput( input.proxyOutput )
 		},
 		viewXPack( xpack ) {
 			this.graphView = xpack

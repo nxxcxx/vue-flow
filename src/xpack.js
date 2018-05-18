@@ -12,10 +12,12 @@ class XPack extends nodeFactory.Node {
 		super()
 		this.name = `XPack-${this.uuid.slice( 0, 4 ).toUpperCase()}`
 		this.parent = parent
-		this.uStreamRouter = new RouterNode( 'INPUTS' )
-		this.dStreamRouter = new RouterNode( 'OUTPUTS')
+		this.uStreamRouter = new RouterNode( 'VIA' )
+		this.dStreamRouter = new RouterNode( 'VIA')
 		this.uStreamRouter.xpack = this
 		this.dStreamRouter.xpack = this
+		this.uStreamRouter.parent = this
+		this.dStreamRouter.parent = this
 		this.routers = [ this.uStreamRouter, this.dStreamRouter ]
 		this.addNodes( [ ...this.routers, ...nodes ] )
 	}
