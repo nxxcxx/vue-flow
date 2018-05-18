@@ -132,14 +132,30 @@ class Node extends Executable {
 		super()
 		this.uuid = uuid()
 		this.name = name
+		this.parent = null
+		this.nodes = []
+		this.connections = []
 		this.input = []
 		this.output = []
 		this.order = -1
 		this.position = { x: 0, y: 0 }
 		this.type = type
-		this.parent = null
 		this._selecting = false
 		this._dimension = { w: 0, h: 0 }
+	}
+	addNodes( nodes ) {
+		nodes.forEach( n => {
+			n.parent = this
+			this.nodes.push( n )
+		} )
+	}
+	removeNodes( nodes ) {
+		this.nodes = this.nodes.filter( n => nodes.indexOf( n ) < 0 )
+	}
+	addConnections( connections ) {
+		connections.forEach( c => {
+			this.connections.push( c )
+		} )
 	}
 	addInput() {
 		for ( let arg of arguments ) {

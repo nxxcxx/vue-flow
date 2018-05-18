@@ -10,7 +10,6 @@
 <script>
 export default {
 	name: 'SelectionBox',
-	props: [ 'enable' ],
 	inject: [ '$EventBus' ],
 	data() {
 		return {
@@ -24,20 +23,17 @@ export default {
 		}
 	},
 	mounted() {
-		let vp = $( this.$parent.$refs.nodeGraphRoot )
 		let setPosition = ( l, t ) => { [ this.left, this.top ] = [ l, t ] }
-		vp.on( 'mousedown', ev => {
-			if ( !this.enable ) return
-			if ( ev.button !== 0 ) return
+		this.$EventBus.$on( 'selection-box-enable', ev => {
 			this.prevPos = { x: ev.clientX, y: ev.clientY }
 			this.prevPosRel = this.$parent.getMousePositionRelative( ev )
 			this.active = true
 		} )
-		.on( 'mouseup', ev => {
+		this.$EventBus.$on( 'selection-box-disable', ev => {
 			this.active = false
 			this.resetSelectionBox()
 		} )
-		.on( 'mousemove', ev => {
+		this.$EventBus.$on( 'selection-box-update', ev => {
 			if ( !this.active ) return
 			let [ cp, pp ] = [ { x: ev.clientX, y: ev.clientY }, this.prevPos ]
 			, ppr = this.prevPosRel

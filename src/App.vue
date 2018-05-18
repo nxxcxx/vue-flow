@@ -70,7 +70,6 @@ export default {
 			$( window ).on( 'resize', () => {
 				let v = $( this.$refs.rightView )
 				this.three.renderer.setSize( v.width(), v.height() )
-				console.log( 'resize', this.three.renderer.getSize() )
 			} ).trigger( 'resize' )
 		}
 	},

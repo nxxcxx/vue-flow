@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div ref="viewport" class="viewport">
 
 		<div style="width: calc(100% - 15px); position: absolute; padding: 0px 4px; z-index: 20; background: rgb(0, 0, 0); user-select: none;">
 			<nav style="display: inline-block; cursor: pointer;">
@@ -18,9 +18,7 @@
 			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="run">[RUN]</div>
 		</div>
 
-		<div ref="nodeGraphRoot" id="nodeGraphRoot">
-
-			<div ref="nodeGraphBG" class="nodeGraphBG"></div>
+		<div ref="nodeGraphRoot" class="nodeGraphRoot">
 
 			<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
@@ -40,7 +38,7 @@
 
 		</div>
 
-		<SelectionBox :enable="enableSelectionBox"></SelectionBox>
+		<SelectionBox></SelectionBox>
 
 	</div>
 </template>
@@ -75,9 +73,9 @@ export default {
 				minZoom: 0.2,
 				zoomFactor: 1.0,
 				prevMouse: { x: 0, y: 0 },
-				mouseHoldBg: false,
-				middleMouseHold: false,
 				currentSelectedNode: null,
+				leftMouseHold: false,
+				middleMouseHold: false,
 			},
 			enableSelectionBox: false,
 		}
@@ -117,7 +115,6 @@ export default {
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
 			this.vpd.zoomFactor = sf
 			this.$EventBus.$emit( 'vp-zoom' )
-			console.log( sf )
 		},
 		setZoomFactor( sf ) {
 			this.vpd.zoomFactor = sf
@@ -316,13 +313,13 @@ export default {
 			} )
 			let dimension = { w: maxX - minX, h: maxY - minY }
 			// TODO set vp size
-			let vpDimension = { w: 783 - 150, h: 464 - 150 }
+			let vp = $( this.$refs.nodeGraphRoot )
+			let vpDimension = { w: vp.width() - 150, h: vp.height() - 150 }
 			let size = Math.max( dimension.w, dimension.h )
 			let vpSize = Math.max( vpDimension.w, vpDimension.h )
 			if ( dimension.w < dimension.h )
 				vpSize = Math.min( vpDimension.w, vpDimension.h )
 			let scaleFactor = vpSize / size
-			console.log( scaleFactor )
 			this.setZoomFactor( scaleFactor )
 			$( this.$refs.nodeGraphRoot ).scrollLeft( minX * scaleFactor - 20 ).scrollTop( minY * scaleFactor - 20 )
 		},
@@ -336,24 +333,23 @@ export default {
 					rsort( n )
 				} )
 				graph.nodes.sort( ( a, b ) => a.order - b.order )
-				console.log( graph.name, graph.nodes )
 			}
 			rsort( this.graph )
 		},
 		parse() {
 			this.sort()
-			let p = ( graph ) => {
+			let rparse = ( graph ) => {
 				graph.nodes
 				.filter( n => n.order !== -1 )
 				.forEach( n => {
 					if ( n.constructor.name === 'Node' ) {
 						n.parse()
 					} else if ( n instanceof XPack ) {
-						exe( n )
+						rparse( n )
 					}
 				} )
 			}
-			p( this.graph )
+			rparse( this.graph )
 		},
 		step() {
 			let exe = ( graph ) => {
@@ -384,7 +380,6 @@ export default {
 		this.$EventBus = this._provided.$EventBus
 	},
 	mounted() {
-		console.log( this.$parent )
 		this.init()
 		this.$EventBus.$on( 'node-click', ev => {
 		} )
@@ -431,17 +426,16 @@ export default {
 				io.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
 			}
 		} )
-		$( this.$refs.nodeGraphBG )
-			.on( 'mousedown', ev => {
-				this.vpd.mouseHoldBg = true
-				if ( ev.button === 0 ) this.enableSelectionBox = true
-			} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'contextmenu', ev => {
 				ev.preventDefault()
 			} )
 			.on( 'mousedown', ev => {
-				if ( ev.button === 0 ) this.leftMouseHold = true
+				if ( ev.button === 0 ) {
+					this.vpd.leftMouseHold = true
+					if ( !this.movingNode )
+						this.$EventBus.$emit( 'selection-box-enable', ev )
+				}
 				if ( ev.button === 1 ) {
 					ev.preventDefault()
 					this.vpd.middleMouseHold = true
@@ -449,9 +443,7 @@ export default {
 				this.vpd.prevMouse = { x: ev.clientX, y: ev.clientY }
 			} )
 			.on( 'mouseup', ev => {
-				if ( ev.target.tagName !== 'BUTTON' &&
-						ev.button !== 1 && this.leftMouseHold
-					) {
+				if ( ev.button !== 1 && this.vpd.leftMouseHold ) {
 					let selecting = this.graphView.nodes.filter( n => n._selecting )
 					if ( !this.movingNode ) {
 						if ( selecting.length > 0 ) {
@@ -478,14 +470,14 @@ export default {
 						}
 					}
 				}
-				this.leftMouseHold = false
-				this.vpd.mouseHoldBg = false
+				this.vpd.leftMouseHold = false
 				this.vpd.middleMouseHold = false
 				this.enableSelectionBox = false
 				this.movingNode = false
 				this.ioConnecting = false
 				this.tempConnectionPair = [ null, null ]
 				this.$EventBus.$emit( 'ghost-connection-disable' )
+				this.$EventBus.$emit( 'selection-box-disable', ev )
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -496,10 +488,10 @@ export default {
 				}
 				this.zoom( anchor, ev.originalEvent.deltaY )
 			} )
-		$( this.$refs.nodeGraphRoot )
 			.on( 'mousemove', ev => {
 				let rm = this.getMousePositionRelative( ev )
 				this.$EventBus.$emit( 'ghost-connection-update', rm )
+				this.$EventBus.$emit( 'selection-box-update', ev )
 				let [ dx, dy ] = [ ev.clientX - this.vpd.prevMouse.x, ev.clientY - this.vpd.prevMouse.y ]
 				if ( this.vpd.middleMouseHold ) {
 					this.pan( dx, dy )
@@ -517,14 +509,16 @@ export default {
 						} )
 					} )
 				}
-
 			} )
 	}
 }
 </script>
 
 <style lang="sass">
-	#nodeGraphRoot
+	.viewport
+		width: 100%
+		height: 100%
+	.nodeGraphRoot
 		user-select: none
 		cursor: default
 		transform-style: preserve-3d
@@ -532,8 +526,6 @@ export default {
 		position: absolute
 		height: 100%
 		width: 100%
-		left: 0px
-		top: 0px
 	.nodeGraphContainer
 		background-color: transparent
 		background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
@@ -556,10 +548,4 @@ export default {
 		pointer-events: none
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
-	.nodeGraphBG
-		width: calc( 100% - 10px )
-		height: calc( 100% - 10px )
-		position: fixed
-		background: rgba( 0, 0, 0, 0 )
-		pointer-events: auto
 </style>

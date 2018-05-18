@@ -108,8 +108,9 @@ export default {
 <style lang="sass">
 	$d0: rgb(24,26,28)
 	$b0: #0bb1f9
+	$h1: #e6e6e6
 	$w1: #e6e6e6
-	$r0: #777777
+	$s0: #0bb1f9
 	.nodeModule
 		position: absolute
 		padding: 4px 0px 4px 0px
@@ -118,9 +119,9 @@ export default {
 		box-sizing: border-box
 		border: 1px solid transparent
 		&:hover
-			border: 1px solid $r0
+			border: 1px solid $h1
 		&.tmpSelected
-			border: 1px solid red
+			border: 1px solid $s0
 		&.selected
 			border: 1px solid $b0
 	.header
