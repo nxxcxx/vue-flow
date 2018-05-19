@@ -83,10 +83,12 @@ export default {
 			if ( !this.io.free )
 				this.selected = true
 			this.hover = true
+			this.$EventBus.$emit( 'io-mouse-enter' )
 		} )
 		.on( 'mouseleave', ev => {
 			this.selected = false
 			this.hover = false
+			this.$EventBus.$emit( 'io-mouse-leave' )
 		} )
 	}
 }

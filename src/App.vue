@@ -151,7 +151,7 @@ export default {
 			}
 
 			let root = new XPack()
-			let importedGraph = require( './test_node_graph_v2.json' )
+			let importedGraph = require( './graph.json' )
 			construct( importedGraph, root )
 			this.graph = root
 			console.log( this.graph )

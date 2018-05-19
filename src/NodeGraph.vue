@@ -52,6 +52,7 @@ import NodeGhostConnection from './NodeGhostConnection.vue'
 import SelectionBox from './SelectionBox.vue'
 import toposort from 'toposort'
 import { XPack, RouterNode } from './xpack.js'
+import nodeFactory from './NodeFactory.js'
 
 export default {
 	name: 'NodeGraph',
@@ -96,6 +97,11 @@ export default {
 			}
 			rConnect( this.graph )
 
+			window.CREATE_NODE = name => {
+				let n = new nodeFactory.Node( name )
+				this.graph.nodes.push( n )
+			}
+
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
@@ -130,7 +136,6 @@ export default {
 			this.vpd.zoomFactor = sf
 			let mat = this.getContainerMatrix()
 			let nCont = $( this.$refs.nodeGraphContainer )
-			// TODO pan to center
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${0},${0})` )
 			this.$EventBus.$emit( 'vp-zoom' )
 		},
@@ -139,11 +144,8 @@ export default {
 			this.$root.$emit( 'node-clear-selected' )
 		},
 		addNodeToSelection( node, clear ) {
-			if ( clear )
-				this.selectedNodes = [ node ]
-			if ( !this.isNodeSelected( node ) ) {
-				this.selectedNodes.push( node )
-			}
+			if ( clear ) this.selectedNodes = [ node ]
+			if ( !this.isNodeSelected( node ) ) this.selectedNodes.push( node )
 		},
 		removeNodeFromSelection( node ) {
 			this.selectedNodes = this.selectedNodes.filter( n => n !== node )
@@ -165,14 +167,6 @@ export default {
 			connections.forEach( p => { edges.push( [ p[ 0 ].parent.uuid, p[ 1 ].parent.uuid ] ) } )
 			return toposort( edges )
 		},
-		isConnectionValid( pair ) {
-			let [ opt, inp ] = pair
-			return ( opt !== null && inp !== null &&
-				opt.parent.uuid !== inp.parent.uuid &&
-				!this.isConnectionExists( opt, inp ) &&
-				!this.isConnectionCyclic( opt, inp )
-			)
-		},
 		disconnectXPackByInput( io ) {
 			if ( io.type !== 1 ) throw new Error( 'invalid connection type' )
 			let input = io
@@ -191,6 +185,7 @@ export default {
 			input.parent.parent.connections = input.parent.parent.connections.filter( pair => pair[ 1 ] !== io )
 		},
 		connectXPackIo( opt, inp ) {
+			// TODO validate connection
 			this.disconnectXPackByInput( inp )
 			inp.connectProxy( opt )
 			let endPointOutput = this.traceProxyInput( inp )
@@ -451,6 +446,7 @@ export default {
 				.filter( n => n.order !== -1 )
 				.forEach( n => {
 					if ( n.constructor.name === 'Node' ) {
+						n.flushOutput()
 						n.parse()
 					} else if ( n instanceof XPack ) {
 						rparse( n )
@@ -493,8 +489,7 @@ export default {
 		} )
 		this.$EventBus.$on( 'node-dblclick', payload => {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
-			// TODO view xpack if not mouseover io
-			if ( payload.node instanceof XPack ) {
+			if ( payload.node instanceof XPack && !this.ioMouseOver ) {
 				this.viewXPack( payload.node )
 			}
 		} )
@@ -507,6 +502,7 @@ export default {
 			} else if ( !this.isNodeSelected( payload.node ) ) {
 				this.addNodeToSelection( payload.node, true )
 			}
+			window.SELECTED_NODES = this.selectedNodes
 			this.$root.$emit( 'node-selected', this.selectedNodes )
 			this.movingNode = true
 		} )
@@ -533,6 +529,12 @@ export default {
 			} else {
 				io.proxyInput.forEach( inp => this.disconnectXPackByInput( inp ) )
 			}
+		} )
+		this.$EventBus.$on( 'io-mouse-enter', () => {
+			this.ioMouseOver = true
+		} )
+		this.$EventBus.$on( 'io-mouse-leave', () => {
+			this.ioMouseOver = false
 		} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'contextmenu', ev => {
