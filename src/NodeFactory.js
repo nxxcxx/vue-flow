@@ -128,7 +128,7 @@ class Executable {
 }
 
 class Node extends Executable {
-	constructor( name, type = '' ) {
+	constructor( name ) {
 		super()
 		this.uuid = uuid()
 		this.name = name
@@ -139,7 +139,6 @@ class Node extends Executable {
 		this.output = []
 		this.order = -1
 		this.position = { x: 0, y: 0 }
-		this.type = type
 		this._selecting = false
 		this._dimension = { w: 0, h: 0 }
 	}

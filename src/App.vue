@@ -71,7 +71,49 @@ export default {
 				let v = $( this.$refs.rightView )
 				this.three.renderer.setSize( v.width(), v.height() )
 			} ).trigger( 'resize' )
-		}
+		},
+		exportGraph( graph ) {
+			function parseNode( graph, gcc = { nodes: [], connections: [] } ) {
+				gcc.connections = graph.connections.map( p => ( { output: p[ 0 ].uuid, input: p[ 1 ].uuid } ) )
+				for ( let node of graph.nodes ) {
+					let n = {}
+					n.name = node.name
+					n.uuid = node.uuid
+					n.position = { x: ~~node.position.x, y: ~~node.position.y }
+					n._fnstr = node._fnstr
+					n.input = node.input.map( inp => ( { name: inp.name, uuid: inp.uuid } ) )
+					n.output = node.output.map( opt => ( { name: opt.name, uuid: opt.uuid} ) )
+					n.nodes = []
+					n.connections = []
+					gcc.nodes.push( n )
+					parseNode( node, n )
+				}
+				return gcc
+			}
+			return parseNode( graph )
+		},
+		importGraphV2( importedGraph ) {
+
+			function construct( graph, gcc ) {
+				gcc.connections = graph.connections
+				for ( let node of graph.nodes ) {
+					let n;
+					if ( node.name !== 'VIA' ) {
+						n = new XPack()
+						n.name = node.name
+					}
+					if ( n ) {
+						gcc.nodes.push( n )
+						construct( node , n )
+					}
+				}
+			}
+
+			let root = new XPack()
+			construct( importedGraph, root )
+			return root
+
+		},
 	},
 	created() {
 		this.importGraph()
@@ -81,6 +123,15 @@ export default {
 		this.$root.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 		} )
+
+		window.testExport = () => {
+			let exportedGraph = this.exportGraph( this.graph )
+			console.log( 'exported:', exportedGraph )
+			let constructedGraph = this.importGraphV2( exportedGraph )
+			console.log( 'constructed:', constructedGraph )
+			// graph = JSON.stringify( graph, null, 2 )
+		}
+
 	}
 }
 </script>
