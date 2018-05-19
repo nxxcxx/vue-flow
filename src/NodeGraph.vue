@@ -90,15 +90,11 @@ export default {
 				graph.connections.forEach( pair => this.connectXPackIo( ...pair ) )
 				for ( let node of graph.nodes ) {
 					if ( node instanceof XPack ) {
-						console.log( node )
 						rConnect( node )
 					}
 				}
 			}
-			if ( !window.__graphInit ) {
-				window.__graphInit = true
-				rConnect( this.graph )
-			}
+			rConnect( this.graph )
 
 		},
 		getContainerMatrix() {
