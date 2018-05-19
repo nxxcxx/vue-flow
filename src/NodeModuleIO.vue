@@ -2,7 +2,7 @@
 	<div class="ioRow" :class="{ inputRow: isInput(), outputRow: isOutput() }">
 		<div ref="ioPort" class="ioPort"
 			:class="{ inputPort: isInput(), outputPort: isOutput(),
-				connected: !io.free && !selected, selected: selected
+				connected: !io.free && !selected, selected, hover
 			}"
 		>
 		</div>
@@ -21,7 +21,8 @@ export default {
 	props: [ 'io' ],
 	data() {
 		return {
-			selected: false
+			selected: false,
+			hover: false
 		}
 	},
 	methods: {
@@ -79,10 +80,13 @@ export default {
 			this.$EventBus.$emit( 'io-disconnect', this.io )
 		} )
 		.on( 'mouseenter', ev => {
-			if ( !this.io.free ) this.selected = true
+			if ( !this.io.free )
+				this.selected = true
+			this.hover = true
 		} )
 		.on( 'mouseleave', ev => {
 			this.selected = false
+			this.hover = false
 		} )
 	}
 }
@@ -142,7 +146,7 @@ export default {
 		&.connected
 			background: $w1
 
-	.ioHover
+	.hover
 		background: $w1
 
 	.active

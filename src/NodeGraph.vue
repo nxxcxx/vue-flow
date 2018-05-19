@@ -178,10 +178,7 @@ export default {
 				if ( endPointInput ) endPointInput.forEach( inp => inp.disconnect() )
 			}
 			input.disconnectProxy()
-			// TODO remove should be relative to parent
 			input.parent.parent.connections = input.parent.parent.connections.filter( pair => pair[ 1 ] !== io )
-			// console.log( input.parent.parent )
-			// this.graphView.connections = this.graphView.connections.filter( pair => pair[ 1 ] !== io )
 		},
 		connectXPackIo( opt, inp ) {
 			this.disconnectXPackByInput( inp )
