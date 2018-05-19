@@ -34,9 +34,9 @@
 <script>
 import NodeGraph from './NodeGraph.vue'
 import NodeEditor from './NodeEditor.vue'
-import importGraphConfiguration from './import.svc.js'
-import { XPack } from './xpack.js'
+import { XPack, RouterNode } from './xpack.js'
 import TreeView from './TreeView.vue'
+import nodeFactory from './NodeFactory.js'
 
 export default {
 	name: 'app',
@@ -55,12 +55,6 @@ export default {
 		}
 	},
 	methods: {
-		importGraph() {
-			let importedGraph = importGraphConfiguration()
-			this.graph = new XPack()
-			this.graph.addNodes( importedGraph.nodes )
-			this.graph.addConnections( importedGraph.connections )
-		},
 		initTHREE() {
 			this.three.renderer = new THREE.WebGLRenderer( {
 				canvas: this.$refs.canvas,
@@ -74,7 +68,7 @@ export default {
 		},
 		exportGraph( graph ) {
 			function parseNode( graph, gcc = { nodes: [], connections: [] } ) {
-				gcc.connections = graph.connections.map( p => ( { output: p[ 0 ].uuid, input: p[ 1 ].uuid } ) )
+				gcc.connections = graph.connections.map( p => [ p[ 0 ].uuid, p[ 1 ].uuid ] )
 				for ( let node of graph.nodes ) {
 					let n = {}
 					n.name = node.name
@@ -92,27 +86,76 @@ export default {
 			}
 			return parseNode( graph )
 		},
-		importGraphV2( importedGraph ) {
-
+		importGraph() {
+			let uuid_io_ref = {}
 			function construct( graph, gcc ) {
-				gcc.connections = graph.connections
+				let newRouter = []
 				for ( let node of graph.nodes ) {
+
 					let n;
-					if ( node.name !== 'VIA' ) {
+					if ( node.nodes.length > 0 ) {
 						n = new XPack()
-						n.name = node.name
+						n.parent = gcc
+					} else if ( node.name !== 'VIA' ) {
+						n = new nodeFactory.Node()
+						n.parent = gcc
+					} else if ( node.name === 'VIA' ) {
+						n = new RouterNode( 'VIA' )
 					}
-					if ( n ) {
-						gcc.nodes.push( n )
-						construct( node , n )
+
+					n.xpack = gcc
+					n.parent = gcc
+					n.name = node.name
+					n.uuid = node.uuid
+					n.position = node.position
+					n._fnstr = node._fnstr
+
+					for ( let inp of node.input ) {
+						let io = n.addInput( inp.name )
+						io.uuid = inp.uuid
+						uuid_io_ref[ inp.uuid ] = io
 					}
+					for ( let opt of node.output ) {
+						let io = n.addOutput( opt.name )
+						io.uuid = opt.uuid
+						uuid_io_ref[ opt.uuid ] = io
+					}
+					if ( n instanceof RouterNode ) {
+						let type = n.output.length > 0 ? 0 : 1
+						newRouter[ type ] = n
+					}
+					gcc.nodes.push( n )
+
 				}
+
+				// set via of current xpack
+				gcc.nodes = gcc.nodes.filter( n => !( n instanceof RouterNode ) )
+				if ( gcc instanceof XPack ) {
+					// gcc.uStreamRouter = newRouter[ 0 ] || new RouterNode( 'NULL' )
+					// gcc.dStreamRouter = newRouter[ 1 ] || new RouterNode( 'NULL' )
+					gcc.uStreamRouter = newRouter[ 0 ]
+					gcc.dStreamRouter = newRouter[ 1 ]
+					if ( gcc.uStreamRouter )
+						gcc.nodes.unshift( gcc.uStreamRouter )
+					if ( gcc.dStreamRouter )
+						gcc.nodes.unshift( gcc.dStreamRouter )
+					// gcc.nodes = [ gcc.uStreamRouter, gcc.dStreamRouter, ...gcc.nodes ]
+				}
+
+				for ( let node of graph.nodes ) {
+					let n = gcc.nodes.find( nn => nn.uuid === node.uuid )
+					if ( n ) construct( node, n )
+				}
+
+				gcc.connections = graph.connections.map( p => [ uuid_io_ref[ p[ 0 ] ], uuid_io_ref[ p[ 1 ] ] ] )
 			}
 
 			let root = new XPack()
+			let importedGraph = require( './test_node_graph_v2.json' )
 			construct( importedGraph, root )
+			this.graph = root
+			console.log( this.graph )
 			return root
-
 		},
 	},
 	created() {
@@ -127,9 +170,11 @@ export default {
 		window.testExport = () => {
 			let exportedGraph = this.exportGraph( this.graph )
 			console.log( 'exported:', exportedGraph )
-			let constructedGraph = this.importGraphV2( exportedGraph )
-			console.log( 'constructed:', constructedGraph )
-			// graph = JSON.stringify( graph, null, 2 )
+			exportedGraph = JSON.stringify( exportedGraph, null, 2 )
+			let win = window.open()
+			win.document.open()
+			win.document.write( '<html><body><pre>' + exportedGraph + '</pre></body></html>' )
+			win.document.close()
 		}
 
 	}

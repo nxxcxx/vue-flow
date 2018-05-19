@@ -50,7 +50,6 @@ import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
 import NodeGhostConnection from './NodeGhostConnection.vue'
 import SelectionBox from './SelectionBox.vue'
-import importGraphConfiguration from './import.svc.js'
 import toposort from 'toposort'
 import { XPack, RouterNode } from './xpack.js'
 
@@ -86,6 +85,21 @@ export default {
 			this.graphViewPath = [ { name: 'Root', node: this.graph } ]
 			this.graphView.connections.forEach( pair => this.connectXPackIo( ...pair ) )
 			this.$EventBus.$emit( 'node-record-prev-pos' )
+
+			let rConnect = graph => {
+				graph.connections.forEach( pair => this.connectXPackIo( ...pair ) )
+				for ( let node of graph.nodes ) {
+					if ( node instanceof XPack ) {
+						console.log( node )
+						rConnect( node )
+					}
+				}
+			}
+			if ( !window.__graphInit ) {
+				window.__graphInit = true
+				rConnect( this.graph )
+			}
+
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )

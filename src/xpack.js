@@ -18,8 +18,7 @@ class XPack extends nodeFactory.Node {
 		this.dStreamRouter.xpack = this
 		this.uStreamRouter.parent = this
 		this.dStreamRouter.parent = this
-		this.routers = [ this.uStreamRouter, this.dStreamRouter ]
-		this.addNodes( [ ...this.routers, ...nodes ] )
+		this.addNodes( [ this.uStreamRouter, this.dStreamRouter, ...nodes ] )
 	}
 }
 
