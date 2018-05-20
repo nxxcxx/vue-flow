@@ -173,11 +173,11 @@ export default {
 			if ( input.parent.constructor.name === 'Node' ) {
 				input.disconnect()
 			} else if ( input.parent instanceof XPack ) {
-				let rOutput = input.parent.uStreamRouter.output.find( opt => opt.name === input.name )
+				let rOutput = input._via
 				let endPointInput = this.traceProxyOutput( rOutput )
 				if ( endPointInput ) endPointInput.forEach( inp => inp.disconnect() )
 			} else if ( input.parent instanceof RouterNode ) {
-				let xOutput = input.parent.xpack.output.find( opt => opt.name === input.name )
+				let xOutput = input._via
 				let endPointInput = this.traceProxyOutput( xOutput )
 				if ( endPointInput ) endPointInput.forEach( inp => inp.disconnect() )
 			}
@@ -247,33 +247,23 @@ export default {
 			xp.dStreamRouter.position = { x: maxX + 200, y: minY }
 			xp.position = { x: xpos.x / nodes.length, y: xpos.y / nodes.length }
 
-			// create io
-			incomingConnections.forEach( inp => {
-				if ( xp.input.find( xin => xin.name === inp.name ) === undefined )
-					xp.addInput( inp.name )
-				if ( xp.uStreamRouter.output.find( uout => uout.name === inp.name ) === undefined )
-					xp.uStreamRouter.addOutput( inp.name )
-			} )
-
-			outgoingConnections.forEach( opt => {
-				if ( xp.output.find( xout => xout.name === opt.name ) === undefined )
-					xp.addOutput( opt.name )
-				if ( xp.dStreamRouter.input.find( din => din.name === opt.name ) === undefined )
-					xp.dStreamRouter.addInput( opt.name )
-			} )
-
-			// create reference connection state ( io connection mutate proxy state )
+			// create io & create reference connection state ( io connection mutate proxy state )
 			let connectionRef = []
 			incomingConnections.forEach( inp => {
-				let uopt = xp.uStreamRouter.output.find( uso => uso.name === inp.name )
+				let xinp = xp.addInput( inp.name )
+				let uopt = xp.uStreamRouter.addOutput( inp.name )
+				xinp._via = uopt
+				uopt._via = xinp
 				connectionRef.push( [ uopt, inp ] )
-				let xinp = xp.input.find( xinp => xinp.name === inp.name )
 				connectionRef.push( [ inp.proxyOutput, xinp ] )
 			} )
+
 			outgoingConnections.forEach( opt => {
-				let dinp = xp.dStreamRouter.input.find( dsi => dsi.name === opt.name )
+				let xopt = xp.addOutput( opt.name )
+				let dinp = xp.dStreamRouter.addInput( opt.name )
+				xopt._via = dinp
+				dinp._via = xopt
 				connectionRef.push( [ opt, dinp ] )
-				let xopt = xp.output.find( xopt => xopt.name === opt.name )
 				opt.proxyInput.forEach( inp => {
 					connectionRef.push( [ xopt, inp ] )
 				} )
@@ -337,20 +327,19 @@ export default {
 			}
 			function traceInput( input ) {
 				if ( input.parent instanceof XPack ) {
-					let router = input.parent.uStreamRouter
-					let routerOutput = router.output.find( opt => opt.name === input.name )
+					let routerOutput = input._via
 					return self.traceProxyOutput( routerOutput )
 				} else if ( input.parent instanceof RouterNode ) {
-					let xpack = input.parent.xpack
-					let xpackOutput = xpack.output.find( opt => opt.name === input.name )
+					let xpack = input.parent.parent
+					let xpackOutput = input._via
 					return self.traceProxyOutput( xpackOutput )
 				} else if ( input.parent.constructor.name === 'Node' ) {
 					return input
 				}
 			}
-			if ( output === null ) return null
+			if ( !output ) return null
 			let endPointInput = output.proxyInput
-			if ( endPointInput === null ) return null
+			if ( !endPointInput ) return null
 			return flatten( endPointInput.map( inp => traceInput( inp ) ) )
 		},
 		traceProxyInput( input ) {
@@ -358,20 +347,19 @@ export default {
 			let self = this
 			function traceOutput( output ) {
 				if ( output.parent instanceof XPack ) {
-					let router = output.parent.dStreamRouter
-					let routerInput = router.input.find( inp => inp.name === output.name )
+					let routerInput = output._via
 					return self.traceProxyInput( routerInput )
 				} else if ( output.parent instanceof RouterNode ) {
-					let xpack = output.parent.xpack
-					let xpackInput = xpack.input.find( inp => inp.name === output.name )
+					let xpackInput = output._via
 					return self.traceProxyInput( xpackInput )
 				} else if ( output.parent.constructor.name === 'Node' ) {
 					return output
 				}
 			}
-			if ( input === null ) return null
-			if ( input.proxyOutput === null ) return null
-			return traceOutput( input.proxyOutput )
+			if ( !input ) return null
+			let endPointOutput = input.proxyOutput
+			if ( !endPointOutput ) return null
+			return traceOutput( endPointOutput )
 		},
 		viewXPack( xpack ) {
 			this.graphView = xpack

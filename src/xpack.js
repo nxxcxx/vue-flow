@@ -14,8 +14,6 @@ class XPack extends nodeFactory.Node {
 		this.parent = parent
 		this.uStreamRouter = new RouterNode( 'VIA' )
 		this.dStreamRouter = new RouterNode( 'VIA')
-		this.uStreamRouter.xpack = this
-		this.dStreamRouter.xpack = this
 		this.uStreamRouter.parent = this
 		this.dStreamRouter.parent = this
 		this.addNodes( [ this.uStreamRouter, this.dStreamRouter, ...nodes ] )

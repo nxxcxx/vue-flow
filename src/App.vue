@@ -95,10 +95,8 @@ export default {
 					let n;
 					if ( node.nodes.length > 0 ) {
 						n = new XPack()
-						n.parent = gcc
 					} else if ( node.name !== 'VIA' ) {
 						n = new nodeFactory.Node()
-						n.parent = gcc
 					} else if ( node.name === 'VIA' ) {
 						n = new RouterNode( 'VIA' )
 					}
@@ -131,15 +129,24 @@ export default {
 				// set via of current xpack
 				gcc.nodes = gcc.nodes.filter( n => !( n instanceof RouterNode ) )
 				if ( gcc instanceof XPack ) {
-					// gcc.uStreamRouter = newRouter[ 0 ] || new RouterNode( 'NULL' )
-					// gcc.dStreamRouter = newRouter[ 1 ] || new RouterNode( 'NULL' )
 					gcc.uStreamRouter = newRouter[ 0 ]
 					gcc.dStreamRouter = newRouter[ 1 ]
-					if ( gcc.uStreamRouter )
+					if ( gcc.uStreamRouter ) {
+						gcc.uStreamRouter.output.forEach( opt => {
+							let xinp = gcc.input.find( inp => inp.name === opt.name )
+							opt._via = xinp
+							xinp._via = opt
+						} )
 						gcc.nodes.unshift( gcc.uStreamRouter )
-					if ( gcc.dStreamRouter )
+					}
+					if ( gcc.dStreamRouter ) {
+						gcc.dStreamRouter.input.forEach( inp => {
+							let xopt = gcc.output.find( opt => opt.name === inp.name )
+							inp._via = xopt
+							xopt._via = inp
+						} )
 						gcc.nodes.unshift( gcc.dStreamRouter )
-					// gcc.nodes = [ gcc.uStreamRouter, gcc.dStreamRouter, ...gcc.nodes ]
+					}
 				}
 
 				for ( let node of graph.nodes ) {
