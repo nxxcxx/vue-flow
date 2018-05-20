@@ -154,7 +154,7 @@ export default {
 			let importedGraph = require( './graph.json' )
 			construct( importedGraph, root )
 			this.graph = root
-			console.log( this.graph )
+			console.log( 'GRAPH:', this.graph )
 			return root
 		},
 	},

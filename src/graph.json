@@ -1,19 +1,6 @@
 {
   "nodes": [
     {
-      "name": "VIA",
-      "uuid": "aa5f08f9-7b52-4b0e-8e8b-678ecf1418f5",
-      "position": {
-        "x": 55,
-        "y": 55
-      },
-      "_fnstr": "",
-      "input": [],
-      "output": [],
-      "nodes": [],
-      "connections": []
-    },
-    {
       "name": "XPack-5D72",
       "uuid": "5d72b052-a56b-4b99-9e84-f4e2b57f181c",
       "position": {
@@ -189,18 +176,6 @@
       },
       "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: 1.0 * dt,\n    Y: this.clock.elapsedTime,\n    Z: 1.5\n  }\n}\n\nthis.flush = () => {\n\t\n}",
       "input": [
-        {
-          "name": "U",
-          "uuid": "af17bd3c-5f7b-4b83-8bd5-92bf7a67904d"
-        },
-        {
-          "name": "V",
-          "uuid": "fdff3204-d3ac-4509-a67e-e839f313ba24"
-        },
-        {
-          "name": "W",
-          "uuid": "3b066271-00de-4a84-b2f3-b5d3e89dde8b"
-        }
       ],
       "output": [
         {
