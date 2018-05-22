@@ -13,7 +13,7 @@
 			class="connection"
 			:d="getBezierCurveString()"
 			:stroke="hover ? '#0bb1f9' : '#e6e6e6'"
-			stroke-width="1.5"
+			stroke-width="1.0"
 			fill="rgba(0,0,0,0)"
 		/>
 	</g>

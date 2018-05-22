@@ -7,6 +7,10 @@ class Connection {
 		this.parent = parent
 		this.free = true
 		this.position = { x: 0, y: 0 }
+		this.data = null
+	}
+	flush() {
+		this.data = null
 	}
 }
 
@@ -16,6 +20,7 @@ class Input extends Connection {
 		this.output = null
 		this.proxyOutput = null
 		this.type = 1
+		this.data = null
 	}
 	connect( output ) {
 		if ( !( output instanceof Output ) ) throw new Error( 'invalid connection' )
@@ -53,21 +58,17 @@ class Input extends Connection {
 		this.proxyOutput = null
 		this.updatePortAvailability()
 	}
-	retrieveData() {
-		return this.output === null ? null : this.output.data
+	fetchData() {
+		this.data = this.output === null ? null : this.output.data
 	}
 }
 
 class Output extends Connection {
 	constructor( name, parent ) {
 		super( name, parent )
-		this.data = null
 		this.input = []
 		this.proxyInput = []
 		this.type = 0
-	}
-	flush() {
-		this.data = null
 	}
 	updatePortAvailability() {
 		if ( this.proxyInput.length === 0 && this.input.length === 0 ) this.free = true
@@ -88,6 +89,7 @@ class Executable {
 		this._fnstr = ''
 		this._parseTask = null
 		this._initialized = false
+		this._receivedAllOputput = true
 		this.scope = {
 			init: () => {},
 			process: () => {},
@@ -114,16 +116,32 @@ class Executable {
 		}
 	}
 	execute( injectObj = {} ) {
-		let res = null
 		let inpObj = {}
-		this.input.forEach( inp => { inpObj[ inp.name ] = inp.retrieveData() } )
+		this._receivedAllOputput = true
+		this.input.forEach( inp => {
+			inp.fetchData()
+			if ( inp.data ) inpObj[ inp.name ] = inp.data
+			else this._receivedAllOputput = false
+		} )
+		if ( !this._receivedAllOputput ) {
+			return
+		}
+		this.input.forEach( inp => inp.flush() )
+		let processedOutput = null
 		try {
 			this._init( inpObj, injectObj )
-			res = this.scope.process.call( this.scope, inpObj, injectObj )
+			processedOutput = this.scope.process.call( this.scope, inpObj, injectObj )
 		} catch ( ex ) {
 			console.warn( ex, this.name, this.uuid )
 		}
-		if ( res ) this.output.forEach( io => { io.data = res[ io.name ] } )
+		if ( processedOutput ) this.output.forEach( output => { output.data = processedOutput[ output.name ] } )
+	}
+	flush() {
+		this._initialized = false
+		this.scope.flush.call( this.scope )
+		this.input.forEach( inp => inp.flush() )
+		this.output.forEach( output => output.flush() )
+		this.parse()
 	}
 }
 
@@ -165,10 +183,6 @@ class Node extends Executable {
 		let opt = new Output( name, this )
 		this.output.push( opt )
 		return opt
-	}
-	flushOutput() {
-		this.scope.flush.call( this.scope )
-		this.output.forEach( output => output.flush() )
 	}
 	deleteIO( io ) {
 		this.input = this.input.filter( inp => inp !== io )

@@ -1,12 +1,24 @@
 <template>
 	<div id="app">
+
+
 		<div id="left">
+
+			<div style="background: black; width: 100%; height: 14px">
+				<div class="btn" @click="flushSelectedNodes">[FLUSH]</div>
+				<div class="btn" @click="parse">[PARSE]</div>
+				<div class="btn" @click="step">[STEP]</div>
+				<div class="btn" @click="loopStop">[STOP]</div>
+				<div class="btn" @click="loopStart">[START]</div>
+			</div>
+
 			<div v-if="selectedNodes.length === 1">
 				[{{ selectedNodes[ 0 ].name }}] {{ selectedNodes[ 0 ].uuid.toUpperCase() }}
 			</div>
 			<div v-if="selectedNodes.length !== 1">
 				[]
 			</div>
+
 			<NodeEditor></NodeEditor>
 
 			<div style="font-size: 0.9em; padding: 5px; background: rgba(200, 200, 200, 0.025);">
@@ -161,7 +173,7 @@ export default {
 			}
 
 			let root = new XPack()
-			let importedGraph = require( './graph2.json' )
+			let importedGraph = require( './graph.json' )
 			construct( importedGraph, root )
 
 			// map via uuid to ref
@@ -186,6 +198,59 @@ export default {
 			window.GRAPH = root
 			console.log( 'GRAPH:', this.graph )
 			return root
+		},
+		parse() {
+			let rfunc = ( graph, fn ) => {
+				graph.nodes.forEach( n => {
+					if ( n.constructor.name === 'Node' ) {
+						n[ fn ]()
+					} else if ( n instanceof XPack ) {
+						rfunc( n, fn )
+					}
+				} )
+			}
+			rfunc( this.graph, 'flush' )
+			rfunc( this.graph, 'parse' )
+		},
+		step() {
+			let order = 0
+			let exe = ( graph ) => {
+				graph.nodes
+				.forEach( n => {
+					if ( n.constructor.name === 'Node' ) {
+						let renderer = this.three.renderer
+						let injObj = {
+							renderer,
+							width: renderer.getSize().width,
+							height: renderer.getSize().height
+						}
+						n.execute( injObj )
+					} else if ( n instanceof XPack ) {
+						exe( n )
+					}
+					n.order = order++
+				} )
+			}
+			exe( this.graph )
+		},
+		run() {
+			this.step()
+			this.requestAnimFrameId = window.requestAnimationFrame( this.run.bind( this ) )
+		},
+		loopStart() {
+			if ( !this.requestAnimFrameId ) {
+				this.parse()
+				this.run()
+			}
+		},
+		loopStop() {
+			if ( this.requestAnimFrameId ) {
+				window.cancelAnimationFrame( this.requestAnimFrameId )
+				delete this.requestAnimFrameId
+			}
+		},
+		flushSelectedNodes() {
+			this.selectedNodes.forEach( n => n.flush() )
 		},
 	},
 	created() {
@@ -256,5 +321,5 @@ export default {
 	::-webkit-scrollbar-thumb
 		background: $w1
 	::-webkit-scrollbar-thumb:active
-			background: $g0
+		background: $g0
 </style>

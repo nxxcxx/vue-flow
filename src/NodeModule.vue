@@ -1,7 +1,7 @@
 <template>
 	<div ref="nodeModule" class="nodeModule"
 		:style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }"
-		:class="{ selected, tmpSelected: node._selecting }"
+		:class="{ selected, tmpSelected: node._selecting, awatingInputData: !node._receivedAllOputput }"
 	>
 		<div class="header">
 			{{ node.name }}&nbsp;<span style="float: right;">[{{ node.order }}]</span>
@@ -32,6 +32,11 @@ export default {
 	data() {
 		return {
 			prevPos: { left: 0, top: 0 },
+		}
+	},
+	watch: {
+		'node.order': function() {
+			this.$emit( 'update-child-io-position' )
 		}
 	},
 	methods: {
@@ -97,7 +102,6 @@ export default {
 					let temp = ioArray[ ix ]
 					this.$set( ioArray, ix, ioArray[ iy ] )
 					this.$set( ioArray, iy, temp )
-					console.log( ioArray )
 				}
 				this.$emit( 'update-child-io-position' )
 			}
@@ -165,4 +169,6 @@ export default {
 	.outputColumn
 		padding: 0px
 		display: inline-block
+	.awatingInputData
+		border: 1px solid #ff5400
 </style>

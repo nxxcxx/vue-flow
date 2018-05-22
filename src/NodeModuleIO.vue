@@ -118,8 +118,8 @@ export default {
 		display: flex
 
 	.ioPort
-		width: 7px
-		height: 7px
+		width: 5px
+		height: 5px
 		align-self: center
 
 	.ioLabel

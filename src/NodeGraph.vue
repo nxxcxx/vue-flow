@@ -13,10 +13,7 @@
 			<div class="btn" @click="packSelectedNodes">[PACK]</div>
 			<div class="btn"  @click="normalizeView( graphView )">[RESET_VIEW]</div>
 			<div class="btn" @click="centerGraphInView">[CENTER_VIEW]</div>
-			<div class="btn" @click="sort">[SORT]</div>
-			<div class="btn" @click="parse">[PARSE]</div>
-			<div class="btn" @click="step">[STEP]</div>
-			<div class="btn" @click="run">[RUN]</div>
+			<!-- <div class="btn" @click="sort">[SORT]</div> -->
 		</div>
 
 		<div ref="nodeGraphRoot" class="nodeGraphRoot">
@@ -462,70 +459,6 @@ export default {
 			let scaleFactor = vpSize / size
 			this.setZoomFactor( scaleFactor )
 			$( this.$refs.nodeGraphRoot ).scrollLeft( minX * scaleFactor - 20 ).scrollTop( minY * scaleFactor - 20 )
-		},
-		sort() {
-			let rsort = ( graph ) => {
-				if ( !( graph.connections && graph.connections.length > 0 ) )
-					return
-				let ts = this.computeToposort( graph.connections )
-				graph.nodes.forEach( n => {
-					n.order = ts.indexOf( n.uuid )
-					rsort( n )
-				} )
-				graph.nodes.sort( ( a, b ) => a.order - b.order )
-			}
-			rsort( this.graph )
-		},
-		parse() {
-			this.sort()
-			let rflush = ( graph ) => {
-				graph.nodes
-				.filter( n => n.order !== -1 )
-				.forEach( n => {
-					if ( n.constructor.name === 'Node' ) {
-						n.flushOutput()
-					} else if ( n instanceof XPack ) {
-						rflush( n )
-					}
-				} )
-			}
-			let rparse = ( graph ) => {
-				graph.nodes
-				.filter( n => n.order !== -1 )
-				.forEach( n => {
-					if ( n.constructor.name === 'Node' ) {
-						n.parse()
-					} else if ( n instanceof XPack ) {
-						rparse( n )
-					}
-				} )
-			}
-			rflush( this.graph )
-			rparse( this.graph )
-		},
-		step() {
-			let exe = ( graph ) => {
-				graph.nodes
-				.filter( n => n.order !== -1 )
-				.forEach( n => {
-					if ( n.constructor.name === 'Node' ) {
-						let renderer = this.$parent.three.renderer
-						let injObj = {
-							renderer,
-							width: renderer.getSize().width,
-							height: renderer.getSize().height
-						}
-						n.execute( injObj )
-					} else if ( n instanceof XPack ) {
-						exe( n )
-					}
-				} )
-			}
-			exe( this.graph )
-		},
-		run() {
-			this.step()
-			window.requestAnimationFrame( this.run.bind( this ) )
 		},
 	},
 	created() {
