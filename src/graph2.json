@@ -161,7 +161,7 @@
             "x": 50,
             "y": 131
           },
-          "_fnstr": "this.init = () => {\n  if ( this.__initialized ) return\n  this.__initialized = true\n  this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()\n}\n\nthis.process = () => {\n  return {\n  \tContext: this.audioCtx\n  }\n}\n\nthis.flush = () => {\n}\n",
+          "_fnstr": "this.init = () => {\n  this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()\n}\n\nthis.process = () => {\n  return {\n  \tContext: this.audioCtx\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [],
           "output": [
             {
@@ -179,7 +179,7 @@
             "x": 197,
             "y": 93
           },
-          "_fnstr": "this.init = ( input ) => {\n\tif ( this.__initialized ) return\n\tlet self = this\n\tthis.__initialized = true\n\tthis.audio = document.createElement(\"audio\")\n\tthis.audio.crossOrigin = \"anonymous\";\n\tthis.audio.play()\n\tthis.sourceNode = input.Context.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Context.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tvar clientParam = \"client_id=aae0cd3ce269784234bb78aa6d485394\"\n\n  function randomTrack() {\n    get( `http://api.soundcloud.com/tracks/?${clientParam}`, res => {\n      let tracks = JSON.parse( res )\n      let rndTrack = tracks[ ~~( Math.random() * tracks.length ) ]\n      console.log( 'TRACK:', rndTrack )\n      self.audio.src = `${rndTrack.stream_url}?${clientParam}`\n    } )\n  }\n\t\n  randomTrack()\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n\t}\n}",
+          "_fnstr": "this.init = ( input ) => {\n\tlet self = this\n\tthis.audio = document.createElement(\"audio\")\n\tthis.audio.crossOrigin = \"anonymous\";\n\tthis.audio.play()\n\tthis.sourceNode = input.Context.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Context.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tvar clientParam = \"client_id=aae0cd3ce269784234bb78aa6d485394\"\n\n  function randomTrack() {\n    get( `http://api.soundcloud.com/tracks/?${clientParam}`, res => {\n      let tracks = JSON.parse( res )\n      let rndTrack = tracks[ ~~( Math.random() * tracks.length ) ]\n      console.log( 'TRACK:', rndTrack )\n      self.audio.src = `${rndTrack.stream_url}?${clientParam}`\n    } )\n  }\n\t\n  randomTrack()\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n\t}\n}",
           "input": [
             {
               "name": "Context",
@@ -202,7 +202,7 @@
             "x": 370,
             "y": 50
           },
-          "_fnstr": "this.init = ( input ) => {\n  if ( this.__initialized ) return\n  this.__initialized = true\n  this.gainNode = input.Context.createGain()\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.gainNode )\n  this.gainNode.gain.value = input.Gain || 1.0\n  return {\n  \tNode: this.gainNode\n  }\n}\n\nthis.flush = () => {\n}\n",
+          "_fnstr": "this.init = ( input ) => {\n  this.gainNode = input.Context.createGain()\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.gainNode )\n  this.gainNode.gain.value = input.Gain || 1.0\n  return {\n  \tNode: this.gainNode\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [
             {
               "name": "Gain",
@@ -233,7 +233,7 @@
             "x": 532,
             "y": 115
           },
-          "_fnstr": "this.init = ( input ) => {\n  if ( this.__initialized ) return\n  this.__initialized = true\n  this.analyzer = input.Context.createAnalyser()\n  this.analyzer.fftSize = 2048\n\tthis.freqArray = new Uint8Array( this.analyzer.frequencyBinCount )\n  // console.log( 'freqBin', this.analyzer.frequencyBinCount )\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.analyzer )\n  this.analyzer.getByteFrequencyData( this.freqArray )\n  let thres = computeAverage( this.freqArray, 0, 1024 ) / 256\n\treturn {\n\t\tFreq: thres\n\t}\n}\n\nthis.flush = () => {\n}\n\nfunction computeAverage( freqArray, start, end ) {\n\treturn freqArray.slice( start, end ).reduce( ( a, b ) => a + b ) / ( end - start )\n}",
+          "_fnstr": "this.init = ( input ) => {\n  this.analyzer = input.Context.createAnalyser()\n  this.analyzer.fftSize = 2048\n\tthis.freqArray = new Uint8Array( this.analyzer.frequencyBinCount )\n  // console.log( 'freqBin', this.analyzer.frequencyBinCount )\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.analyzer )\n  this.analyzer.getByteFrequencyData( this.freqArray )\n  let thres = computeAverage( this.freqArray, 0, 1024 ) / 256\n\treturn {\n\t\tFreq: thres\n\t}\n}\n\nthis.flush = () => {\n}\n\nfunction computeAverage( freqArray, start, end ) {\n\treturn freqArray.slice( start, end ).reduce( ( a, b ) => a + b ) / ( end - start )\n}",
           "input": [
             {
               "name": "Node",
@@ -257,8 +257,8 @@
           "name": "VIA",
           "uuid": "5f6dd9d5-b5a0-45e1-989b-1c9e79fd9281",
           "position": {
-            "x": 687,
-            "y": 114
+            "x": 683,
+            "y": 115
           },
           "_fnstr": "",
           "input": [
@@ -352,11 +352,6 @@
           "name": "OBJ0",
           "uuid": "1aba94c5-86ee-4285-91b9-30d2a896c6fd",
           "_via": "afa7f1ec-12f1-47e6-924d-42eeabff24a1"
-        },
-        {
-          "name": "OBJ1",
-          "uuid": "0503767b-6ede-483f-bc38-98465986ab52",
-          "_via": "8604ff5f-dbc4-4a23-a5da-fba26001cea9"
         }
       ],
       "output": [],
@@ -406,11 +401,6 @@
               "name": "OBJ0",
               "uuid": "afa7f1ec-12f1-47e6-924d-42eeabff24a1",
               "_via": "1aba94c5-86ee-4285-91b9-30d2a896c6fd"
-            },
-            {
-              "name": "OBJ1",
-              "uuid": "8604ff5f-dbc4-4a23-a5da-fba26001cea9",
-              "_via": "0503767b-6ede-483f-bc38-98465986ab52"
             }
           ],
           "nodes": [],
@@ -428,10 +418,6 @@
             {
               "name": "OBJ0",
               "uuid": "e4c87c73-7eea-494a-b1cb-c178b48975a0"
-            },
-            {
-              "name": "OBJ1",
-              "uuid": "3e48f830-519c-416c-a180-3fde549914d2"
             }
           ],
           "output": [
