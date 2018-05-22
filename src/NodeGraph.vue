@@ -9,13 +9,14 @@
 				</span>
 
 			</nav>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="packSelectedNodes">[PACK]</div>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="normalizeView( graphView )">[RESET_VIEW]</div>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="centerGraphInView">[CENTER_VIEW]</div>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="sort">[SORT]</div>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="parse">[PARSE]</div>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="step">[STEP]</div>
-			<div style="margin-right: 10px; float: right; display: inline-block; cursor: pointer;" @click="run">[RUN]</div>
+			<div class="btn" @click="unpackSelectedNode">[UNPACK]</div>
+			<div class="btn" @click="packSelectedNodes">[PACK]</div>
+			<div class="btn"  @click="normalizeView( graphView )">[RESET_VIEW]</div>
+			<div class="btn" @click="centerGraphInView">[CENTER_VIEW]</div>
+			<div class="btn" @click="sort">[SORT]</div>
+			<div class="btn" @click="parse">[PARSE]</div>
+			<div class="btn" @click="step">[STEP]</div>
+			<div class="btn" @click="run">[RUN]</div>
 		</div>
 
 		<div ref="nodeGraphRoot" class="nodeGraphRoot">
@@ -99,6 +100,7 @@ export default {
 
 			window.CREATE_NODE = name => {
 				let n = new nodeFactory.Node( name )
+				n.parent = this.graph
 				this.graph.nodes.push( n )
 			}
 
@@ -195,6 +197,53 @@ export default {
 			}
 			let parent = inp.parent.parent
 			parent.connections.push( [ opt, inp ] )
+		},
+		unpackSelectedNode() {
+			let xpack = this.selectedNodes[ 0 ]
+			if ( !xpack || ( !xpack instanceof XPack ) ) throw new Error( 'invalid node' )
+			let connectionRef = []
+			// TODO if via does not exists?
+			xpack.input.forEach( inp => {
+				let left = inp.proxyOutput
+				inp._via.proxyInput.forEach( pInp => {
+					let right = pInp
+					connectionRef.push( [ left, right ] )
+				} )
+			} )
+			xpack.output.forEach( opt => {
+				let left = opt._via.proxyOutput
+				opt.proxyInput.forEach( pInp => {
+					let right = pInp
+					connectionRef.push( [ left, right] )
+				} )
+			} )
+			// disconnect xpack & via connections
+			xpack.input.forEach( inp => {
+				this.disconnectXPackByInput( inp )
+				inp._via.proxyInput.forEach( pInp => {
+					this.disconnectXPackByInput( pInp )
+				} )
+			} )
+			xpack.output.forEach( opt => {
+				this.disconnectXPackByInput( opt._via )
+				opt.proxyInput.forEach( inp => {
+					this.disconnectXPackByInput( inp )
+				} )
+			} )
+			// move nodes & connections to parent
+			xpack.parent.nodes = [ ...xpack.parent.nodes, ...xpack.nodes.filter( n => !( n instanceof RouterNode ) ) ]
+			xpack.parent.connections = [ ...xpack.parent.connections, ...xpack.connections ]
+			// update parent
+			xpack.nodes.forEach( n => n.parent = xpack.parent )
+			// remove nodes
+			xpack.nodes = []
+			xpack.connecitons = []
+			// recconnect ref
+			connectionRef.forEach( pair => {
+				this.connectXPackIo( ...pair )
+			} )
+			// remove xpack from parent
+			xpack.parent.nodes = [ ...xpack.parent.nodes.filter( n => n !== xpack ) ]
 		},
 		packSelectedNodes() {
 			let nodes = this.selectedNodes
@@ -429,18 +478,29 @@ export default {
 		},
 		parse() {
 			this.sort()
-			let rparse = ( graph ) => {
+			let rflush = ( graph ) => {
 				graph.nodes
 				.filter( n => n.order !== -1 )
 				.forEach( n => {
 					if ( n.constructor.name === 'Node' ) {
 						n.flushOutput()
+					} else if ( n instanceof XPack ) {
+						rflush( n )
+					}
+				} )
+			}
+			let rparse = ( graph ) => {
+				graph.nodes
+				.filter( n => n.order !== -1 )
+				.forEach( n => {
+					if ( n.constructor.name === 'Node' ) {
 						n.parse()
 					} else if ( n instanceof XPack ) {
 						rparse( n )
 					}
 				} )
 			}
+			rflush( this.graph )
 			rparse( this.graph )
 		},
 		step() {
@@ -524,6 +584,9 @@ export default {
 		this.$EventBus.$on( 'io-mouse-leave', () => {
 			this.ioMouseOver = false
 		} )
+		this.$EventBus.$on( 'io-label-mousedown', () => {
+			this.draggingLabel = true
+		} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'contextmenu', ev => {
 				ev.preventDefault()
@@ -573,9 +636,11 @@ export default {
 				this.enableSelectionBox = false
 				this.movingNode = false
 				this.ioConnecting = false
+				this.draggingLabel = false
 				this.tempConnectionPair = [ null, null ]
 				this.$EventBus.$emit( 'ghost-connection-disable' )
 				this.$EventBus.$emit( 'selection-box-disable', ev )
+				this.$EventBus.$emit( 'io-label-dragging-disable')
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
@@ -598,6 +663,7 @@ export default {
 				if ( !this.vpd.middleMouseHold  &&
 					this.selectedNodes.length > 0 &&
 					this.movingNode &&
+					!this.draggingLabel &&
 					!this.ioConnecting
 				) {
 					this.selectedNodes.forEach( n => {
@@ -646,4 +712,9 @@ export default {
 		pointer-events: none
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
+	.btn
+		margin-right: 10px
+		float: right
+		display: inline-block
+		cursor: pointer
 </style>

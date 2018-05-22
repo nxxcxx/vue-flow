@@ -82,6 +82,29 @@ export default {
 			if ( payload.node === this.node )
 				this.setPosition( payload.pos.x, payload.pos.y )
 		} )
+
+		let ioDragging = null
+		this.$EventBus.$on( 'io-label-mousedown', io => {
+			ioDragging = io
+		} )
+		this.$EventBus.$on( 'io-label-mouseenter', io => {
+			if ( !ioDragging || ioDragging === io) return
+			if ( io.parent === this.node ) {
+				let ioArray = this.node[ io.type === 0 ? 'output' : 'input' ]
+				let ix = ioArray.indexOf( ioDragging )
+				let iy = ioArray.indexOf( io )
+				if ( ix >= 0 && iy >= 0 ) {
+					let temp = ioArray[ ix ]
+					this.$set( ioArray, ix, ioArray[ iy ] )
+					this.$set( ioArray, iy, temp )
+					console.log( ioArray )
+				}
+				this.$emit( 'update-child-io-position' )
+			}
+		} )
+		this.$EventBus.$on( 'io-label-dragging-disable', () => {
+			ioDragging = null
+		} )
 		$( this.$refs.nodeModule )
 			.on( 'click', ev => {
 				this.$EventBus.$emit( 'node-click', ev )
@@ -101,6 +124,9 @@ export default {
 			.on( 'mouseup', ev => {
 				this.$EventBus.$emit( 'node-mouseup' )
 			} )
+	},
+	beforeDestroy() {
+		this.$EventBus.$off( 'io-label-mouseenter' )
 	}
 }
 </script>
@@ -124,6 +150,7 @@ export default {
 			border: 1px solid $s0
 		&.selected
 			border: 1px solid $b0
+			z-index: 5
 	.header
 		padding: 0px 4px 2px 4px
 	.ioContainer

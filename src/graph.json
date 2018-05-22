@@ -12,10 +12,30 @@
       "output": [
         {
           "name": "Mesh",
-          "uuid": "aa7cb146-7001-429f-a835-d4cb4772db3e"
+          "uuid": "aa7cb146-7001-429f-a835-d4cb4772db3e",
+          "_via": "b569ad99-9e46-4f99-820e-b0175d925f86"
         }
       ],
       "nodes": [
+        {
+          "name": "VIA",
+          "uuid": "18c48dde-8d0e-4e36-a119-318110b66a61",
+          "position": {
+            "x": 379,
+            "y": 75
+          },
+          "_fnstr": "",
+          "input": [
+            {
+              "name": "Mesh",
+              "uuid": "b569ad99-9e46-4f99-820e-b0175d925f86",
+              "_via": "aa7cb146-7001-429f-a835-d4cb4772db3e"
+            }
+          ],
+          "output": [],
+          "nodes": [],
+          "connections": []
+        },
         {
           "name": "XPack-E9D3",
           "uuid": "e9d3530f-cd89-46d3-a0d1-50eed51bff02",
@@ -28,14 +48,40 @@
           "output": [
             {
               "name": "Material",
-              "uuid": "e821d953-75d5-46b1-a00e-214b3b2f58d6"
+              "uuid": "e821d953-75d5-46b1-a00e-214b3b2f58d6",
+              "_via": "f0d9def9-274c-4cf8-933b-570a8de6c207"
             },
             {
               "name": "Geometry",
-              "uuid": "9dd97768-732e-48a3-ae00-4f31f04fe335"
+              "uuid": "9dd97768-732e-48a3-ae00-4f31f04fe335",
+              "_via": "1418e931-e451-43da-b927-1900f2658b13"
             }
           ],
           "nodes": [
+            {
+              "name": "VIA",
+              "uuid": "a15e02bb-89c4-4c48-9b49-5e6db7df450e",
+              "position": {
+                "x": 252,
+                "y": 50
+              },
+              "_fnstr": "",
+              "input": [
+                {
+                  "name": "Material",
+                  "uuid": "f0d9def9-274c-4cf8-933b-570a8de6c207",
+                  "_via": "e821d953-75d5-46b1-a00e-214b3b2f58d6"
+                },
+                {
+                  "name": "Geometry",
+                  "uuid": "1418e931-e451-43da-b927-1900f2658b13",
+                  "_via": "9dd97768-732e-48a3-ae00-4f31f04fe335"
+                }
+              ],
+              "output": [],
+              "nodes": [],
+              "connections": []
+            },
             {
               "name": "Material",
               "uuid": "cf6d3faa-a0a4-4693-8734-67e18cd334ac",
@@ -69,28 +115,6 @@
                   "uuid": "5b70af39-95e2-4d2d-89fe-3d59b7826bf9"
                 }
               ],
-              "nodes": [],
-              "connections": []
-            },
-            {
-              "name": "VIA",
-              "uuid": "a15e02bb-89c4-4c48-9b49-5e6db7df450e",
-              "position": {
-                "x": 252,
-                "y": 50
-              },
-              "_fnstr": "",
-              "input": [
-                {
-                  "name": "Material",
-                  "uuid": "f0d9def9-274c-4cf8-933b-570a8de6c207"
-                },
-                {
-                  "name": "Geometry",
-                  "uuid": "1418e931-e451-43da-b927-1900f2658b13"
-                }
-              ],
-              "output": [],
               "nodes": [],
               "connections": []
             }
@@ -132,24 +156,6 @@
           ],
           "nodes": [],
           "connections": []
-        },
-        {
-          "name": "VIA",
-          "uuid": "18c48dde-8d0e-4e36-a119-318110b66a61",
-          "position": {
-            "x": 379,
-            "y": 75
-          },
-          "_fnstr": "",
-          "input": [
-            {
-              "name": "Mesh",
-              "uuid": "b569ad99-9e46-4f99-820e-b0175d925f86"
-            }
-          ],
-          "output": [],
-          "nodes": [],
-          "connections": []
         }
       ],
       "connections": [
@@ -175,8 +181,7 @@
         "y": 87
       },
       "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: 1.0 * dt,\n    Y: this.clock.elapsedTime,\n    Z: 1.5\n  }\n}\n\nthis.flush = () => {\n\t\n}",
-      "input": [
-      ],
+      "input": [],
       "output": [
         {
           "name": "X",
@@ -205,16 +210,37 @@
       "input": [
         {
           "name": "Gain",
-          "uuid": "7fa9becc-7e35-47f4-bf07-85204d51f546"
+          "uuid": "7fa9becc-7e35-47f4-bf07-85204d51f546",
+          "_via": "75671800-8f03-41ff-b86d-ed1f6155a67c"
         }
       ],
       "output": [
         {
           "name": "Freq",
-          "uuid": "bd9b4301-0991-45d5-aef2-cad54b86490f"
+          "uuid": "bd9b4301-0991-45d5-aef2-cad54b86490f",
+          "_via": "8be9f178-2e45-4b27-9044-7edac70ab156"
         }
       ],
       "nodes": [
+        {
+          "name": "VIA",
+          "uuid": "5f6dd9d5-b5a0-45e1-989b-1c9e79fd9281",
+          "position": {
+            "x": 749,
+            "y": 80
+          },
+          "_fnstr": "",
+          "input": [
+            {
+              "name": "Freq",
+              "uuid": "8be9f178-2e45-4b27-9044-7edac70ab156",
+              "_via": "bd9b4301-0991-45d5-aef2-cad54b86490f"
+            }
+          ],
+          "output": [],
+          "nodes": [],
+          "connections": []
+        },
         {
           "name": "VIA",
           "uuid": "c0fd73b5-2548-4f8d-8f2d-e0efabb726c3",
@@ -227,7 +253,8 @@
           "output": [
             {
               "name": "Gain",
-              "uuid": "75671800-8f03-41ff-b86d-ed1f6155a67c"
+              "uuid": "75671800-8f03-41ff-b86d-ed1f6155a67c",
+              "_via": "7fa9becc-7e35-47f4-bf07-85204d51f546"
             }
           ],
           "nodes": [],
@@ -351,24 +378,6 @@
               "uuid": "b8ebc478-00fa-4ee4-a3d9-bdae27e838b4"
             }
           ],
-          "nodes": [],
-          "connections": []
-        },
-        {
-          "name": "VIA",
-          "uuid": "5f6dd9d5-b5a0-45e1-989b-1c9e79fd9281",
-          "position": {
-            "x": 749,
-            "y": 80
-          },
-          "_fnstr": "",
-          "input": [
-            {
-              "name": "Freq",
-              "uuid": "8be9f178-2e45-4b27-9044-7edac70ab156"
-            }
-          ],
-          "output": [],
           "nodes": [],
           "connections": []
         }
@@ -552,11 +561,13 @@
       "input": [
         {
           "name": "OBJ0",
-          "uuid": "1aba94c5-86ee-4285-91b9-30d2a896c6fd"
+          "uuid": "1aba94c5-86ee-4285-91b9-30d2a896c6fd",
+          "_via": "afa7f1ec-12f1-47e6-924d-42eeabff24a1"
         },
         {
           "name": "OBJ1",
-          "uuid": "0503767b-6ede-483f-bc38-98465986ab52"
+          "uuid": "0503767b-6ede-483f-bc38-98465986ab52",
+          "_via": "8604ff5f-dbc4-4a23-a5da-fba26001cea9"
         }
       ],
       "output": [],
@@ -575,6 +586,30 @@
           "connections": []
         },
         {
+          "name": "VIA",
+          "uuid": "cc1af423-f89f-49b3-9f8f-cf1023cd2b7b",
+          "position": {
+            "x": 50,
+            "y": 100
+          },
+          "_fnstr": "",
+          "input": [],
+          "output": [
+            {
+              "name": "OBJ0",
+              "uuid": "afa7f1ec-12f1-47e6-924d-42eeabff24a1",
+              "_via": "1aba94c5-86ee-4285-91b9-30d2a896c6fd"
+            },
+            {
+              "name": "OBJ1",
+              "uuid": "8604ff5f-dbc4-4a23-a5da-fba26001cea9",
+              "_via": "0503767b-6ede-483f-bc38-98465986ab52"
+            }
+          ],
+          "nodes": [],
+          "connections": []
+        },
+        {
           "name": "CAMERA",
           "uuid": "80914c3a-70c6-4d3c-880e-f1b07e664ca6",
           "position": {
@@ -587,28 +622,6 @@
             {
               "name": "Camera",
               "uuid": "13f3fab8-2072-4de7-9e5a-5e647ea39248"
-            }
-          ],
-          "nodes": [],
-          "connections": []
-        },
-        {
-          "name": "VIA",
-          "uuid": "cc1af423-f89f-49b3-9f8f-cf1023cd2b7b",
-          "position": {
-            "x": 50,
-            "y": 100
-          },
-          "_fnstr": "",
-          "input": [],
-          "output": [
-            {
-              "name": "OBJ0",
-              "uuid": "afa7f1ec-12f1-47e6-924d-42eeabff24a1"
-            },
-            {
-              "name": "OBJ1",
-              "uuid": "8604ff5f-dbc4-4a23-a5da-fba26001cea9"
             }
           ],
           "nodes": [],

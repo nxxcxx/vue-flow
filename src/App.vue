@@ -2,7 +2,7 @@
 	<div id="app">
 		<div id="left">
 			<div v-if="selectedNodes.length === 1">
-				[{{ selectedNodes[ 0 ].name }}]
+				[{{ selectedNodes[ 0 ].name }}] {{ selectedNodes[ 0 ].uuid.toUpperCase() }}
 			</div>
 			<div v-if="selectedNodes.length !== 1">
 				[]
@@ -75,8 +75,18 @@ export default {
 					n.uuid = node.uuid
 					n.position = { x: ~~node.position.x, y: ~~node.position.y }
 					n._fnstr = node._fnstr
-					n.input = node.input.map( inp => ( { name: inp.name, uuid: inp.uuid } ) )
-					n.output = node.output.map( opt => ( { name: opt.name, uuid: opt.uuid} ) )
+					n.input = node.input.map( inp => {
+						let res = { name: inp.name, uuid: inp.uuid }
+						if ( inp._via )
+							res._via = inp._via.uuid
+						return res
+					 } )
+					n.output = node.output.map( opt => {
+						 let res = { name: opt.name, uuid: opt.uuid }
+						 if ( opt._via )
+							res._via = opt._via.uuid
+						 return res
+					 } )
 					n.nodes = []
 					n.connections = []
 					gcc.nodes.push( n )
@@ -87,7 +97,9 @@ export default {
 			return parseNode( graph )
 		},
 		importGraph() {
+
 			let uuid_io_ref = {}
+
 			function construct( graph, gcc ) {
 				let newRouter = []
 				for ( let node of graph.nodes ) {
@@ -111,11 +123,13 @@ export default {
 					for ( let inp of node.input ) {
 						let io = n.addInput( inp.name )
 						io.uuid = inp.uuid
+						io._via = inp._via
 						uuid_io_ref[ inp.uuid ] = io
 					}
 					for ( let opt of node.output ) {
 						let io = n.addOutput( opt.name )
 						io.uuid = opt.uuid
+						io._via = opt._via
 						uuid_io_ref[ opt.uuid ] = io
 					}
 					if ( n instanceof RouterNode ) {
@@ -127,26 +141,15 @@ export default {
 				}
 
 				// set via of current xpack
+
 				gcc.nodes = gcc.nodes.filter( n => !( n instanceof RouterNode ) )
 				if ( gcc instanceof XPack ) {
 					gcc.uStreamRouter = newRouter[ 0 ]
 					gcc.dStreamRouter = newRouter[ 1 ]
-					if ( gcc.uStreamRouter ) {
-						gcc.uStreamRouter.output.forEach( opt => {
-							let xinp = gcc.input.find( inp => inp.name === opt.name )
-							opt._via = xinp
-							xinp._via = opt
-						} )
+					if ( gcc.uStreamRouter )
 						gcc.nodes.unshift( gcc.uStreamRouter )
-					}
-					if ( gcc.dStreamRouter ) {
-						gcc.dStreamRouter.input.forEach( inp => {
-							let xopt = gcc.output.find( opt => opt.name === inp.name )
-							inp._via = xopt
-							xopt._via = inp
-						} )
+					if ( gcc.dStreamRouter )
 						gcc.nodes.unshift( gcc.dStreamRouter )
-					}
 				}
 
 				for ( let node of graph.nodes ) {
@@ -158,9 +161,29 @@ export default {
 			}
 
 			let root = new XPack()
-			let importedGraph = require( './graph.json' )
+			let importedGraph = require( './graph2.json' )
 			construct( importedGraph, root )
+
+			// map via uuid to ref
+			function mapVia( graph ) {
+				graph.nodes.forEach( node => {
+					if ( node instanceof XPack ) {
+						node.input.forEach( inp => {
+							inp._via = uuid_io_ref[ inp._via ]
+							inp._via._via = inp
+						} )
+						node.output.forEach( opt => {
+							opt._via = uuid_io_ref[ opt._via ]
+							opt._via._via = opt
+						} )
+					}
+					mapVia( node )
+				} )
+			}
+			mapVia( root )
+
 			this.graph = root
+			window.GRAPH = root
 			console.log( 'GRAPH:', this.graph )
 			return root
 		},
@@ -170,11 +193,13 @@ export default {
 	},
 	mounted() {
 		this.initTHREE()
+		this.$root.$on( 'node-selected', nodes => {
+			this.selectedNodes = nodes
+		} )
 		this.$root.$on( 'node-clear-selected', () => {
 			this.selectedNodes = []
 		} )
-
-		window.testExport = () => {
+		window.TEST_EXPORT_GRAPH = () => {
 			let exportedGraph = this.exportGraph( this.graph )
 			console.log( 'exported:', exportedGraph )
 			exportedGraph = JSON.stringify( exportedGraph, null, 2 )
@@ -183,7 +208,6 @@ export default {
 			win.document.write( '<html><body><pre>' + exportedGraph + '</pre></body></html>' )
 			win.document.close()
 		}
-
 	}
 }
 </script>

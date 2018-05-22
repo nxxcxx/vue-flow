@@ -6,7 +6,7 @@
 			}"
 		>
 		</div>
-		<div class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }"
+		<div ref="ioLabel" class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }"
 			@click="debug()"
 		>
 			{{ io.name }}
@@ -89,6 +89,19 @@ export default {
 			this.selected = false
 			this.hover = false
 			this.$EventBus.$emit( 'io-mouse-leave' )
+		} )
+		$( this.$refs.ioLabel )
+		.on( 'mousedown', ev => {
+			this.$EventBus.$emit( 'io-label-mousedown', this.io )
+		} )
+		.on( 'mouseup', ev => {
+			this.$EventBus.$emit( 'io-label-mouseup' )
+		} )
+		.on( 'mouseenter', ev => {
+			this.$EventBus.$emit( 'io-label-mouseenter', this.io )
+		} )
+		.on( 'mouseleave', ev => {
+			this.$EventBus.$emit( 'io-label-mouseleave', this.io )
 		} )
 	}
 }
