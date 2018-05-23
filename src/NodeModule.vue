@@ -65,7 +65,6 @@ export default {
 		}
 	},
 	mounted() {
-		console.log( this )
 		this.updateDimension()
 		this.$EventBus.$on( 'node-set-selecting', node => {
 			if ( node === this.node ) this.setSelecting()

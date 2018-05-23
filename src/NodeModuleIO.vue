@@ -31,6 +31,7 @@ export default {
 	methods: {
 		editInput() {
 			this.toggleInput = !this.toggleInput
+			this.$parent.$emit( 'update-child-io-position' )
 		},
 		isInput() { return this.io.type === 1 },
 		isOutput() { return this.io.type === 0 },
@@ -176,11 +177,15 @@ export default {
 	.labelInput
 		padding: 0px
 		border: none
-		height: 12px
+		height: 13px
 		width: 60px
 		background: rgb(42, 42, 42)
 		outline-width: 0px
 		color: white
 		font-family: monospace
 		font-size: 12px
+
+		&::selection
+			background: rgb(189, 189, 189)
+
 </style>
