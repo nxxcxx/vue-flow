@@ -65,6 +65,7 @@ export default {
 		}
 	},
 	mounted() {
+		console.log( this )
 		this.updateDimension()
 		this.$EventBus.$on( 'node-set-selecting', node => {
 			if ( node === this.node ) this.setSelecting()
@@ -92,7 +93,7 @@ export default {
 		this.$EventBus.$on( 'io-label-mousedown', io => {
 			ioDragging = io
 		} )
-		this.$EventBus.$on( 'io-label-mouseenter', io => {
+		this.$on( 'io-label-mouseenter', io => {
 			if ( !ioDragging || ioDragging === io) return
 			if ( io.parent === this.node ) {
 				let ioArray = this.node[ io.type === 0 ? 'output' : 'input' ]
@@ -130,7 +131,7 @@ export default {
 			} )
 	},
 	beforeDestroy() {
-		this.$EventBus.$off( 'io-label-mouseenter' )
+		// this.$EventBus.$off( 'io-label-mouseenter' )
 	}
 }
 </script>
@@ -170,5 +171,5 @@ export default {
 		padding: 0px
 		display: inline-block
 	.awatingInputData
-		border: 1px solid #ff5400
+		border: 1px solid #f9b80b
 </style>

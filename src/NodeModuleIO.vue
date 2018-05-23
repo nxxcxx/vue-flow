@@ -8,8 +8,10 @@
 		</div>
 		<div ref="ioLabel" class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }"
 			@click="debug()"
+			@dblclick="editInput()"
 		>
-			{{ io.name }}
+			<span v-show="!toggleInput">{{ io.name }}</span>
+			<span v-show="toggleInput"><input class="labelInput" type="text" name="" value="" v-model="io.name"></span>
 		</div>
 	</div>
 </template>
@@ -22,10 +24,14 @@ export default {
 	data() {
 		return {
 			selected: false,
-			hover: false
+			hover: false,
+			toggleInput: false
 		}
 	},
 	methods: {
+		editInput() {
+			this.toggleInput = !this.toggleInput
+		},
 		isInput() { return this.io.type === 1 },
 		isOutput() { return this.io.type === 0 },
 		updatePosition() {
@@ -43,21 +49,21 @@ export default {
 			} )
 		},
 		debug() {
-			console.log( this.io, `${this.io.name} [${this.io.parent.name}]` )
-			let pName = this.io.parent.name
-			if ( this.io.type === 0 ) {
-				let prox = this.io.proxyInput
-				console.log( '\tPROXY CONNECTION' )
-				prox.forEach( p => console.log( '\t\t', p, `${p.name} [${p.parent.name}]` ) )
-				console.log( '\tLOGICAL CONNECTION' )
-				this.io.input.forEach( inp => console.log( '\t\t', inp, `${inp.name} [${inp.parent.name}]`) )
-			} else {
-				let prox = this.io.proxyOutput
-				console.log( '\tPROXY CONNECTION' )
-				if ( prox ) console.log( '\t\t', `${prox.name} [${prox.parent.name}]` )
-				console.log( '\tLOGICAL CONNECTION' )
-				if ( this.io.output ) console.log( '\t\t', this.io.output, `${this.io.output.name} [${this.io.output.parent.name}]`)
-			}
+			// console.log( this.io, `${this.io.name} [${this.io.parent.name}]` )
+			// let pName = this.io.parent.name
+			// if ( this.io.type === 0 ) {
+			// 	let prox = this.io.proxyInput
+			// 	console.log( '\tPROXY CONNECTION' )
+			// 	prox.forEach( p => console.log( '\t\t', p, `${p.name} [${p.parent.name}]` ) )
+			// 	console.log( '\tLOGICAL CONNECTION' )
+			// 	this.io.input.forEach( inp => console.log( '\t\t', inp, `${inp.name} [${inp.parent.name}]`) )
+			// } else {
+			// 	let prox = this.io.proxyOutput
+			// 	console.log( '\tPROXY CONNECTION' )
+			// 	if ( prox ) console.log( '\t\t', `${prox.name} [${prox.parent.name}]` )
+			// 	console.log( '\tLOGICAL CONNECTION' )
+			// 	if ( this.io.output ) console.log( '\t\t', this.io.output, `${this.io.output.name} [${this.io.output.parent.name}]`)
+			// }
 		}
 	},
 	mounted() {
@@ -98,7 +104,7 @@ export default {
 			this.$EventBus.$emit( 'io-label-mouseup' )
 		} )
 		.on( 'mouseenter', ev => {
-			this.$EventBus.$emit( 'io-label-mouseenter', this.io )
+			this.$parent.$emit( 'io-label-mouseenter', this.io )
 		} )
 		.on( 'mouseleave', ev => {
 			this.$EventBus.$emit( 'io-label-mouseleave', this.io )
@@ -167,5 +173,14 @@ export default {
 	.active
 		background: $b0
 
-
+	.labelInput
+		padding: 0px
+		border: none
+		height: 12px
+		width: 60px
+		background: rgb(42, 42, 42)
+		outline-width: 0px
+		color: white
+		font-family: monospace
+		font-size: 12px
 </style>
