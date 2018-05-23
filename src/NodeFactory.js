@@ -90,25 +90,24 @@ class Executable {
 		this._parseTask = null
 		this._initialized = false
 		this._receivedAllOputput = true
-		this.scope = {
-			init: () => {},
-			process: () => {},
-			flush: () => {}
-		}
+		this._resetScope()
 	}
 	_init( inputObj, injectObj ) {
 		if ( this._initialized ) return
 		this.scope.init.call( this.scope, inputObj, injectObj )
 		this._initialized = true
 	}
+	_resetScope() {
+		this.scope = {
+			init: () => {},
+			process: () => {},
+			flush: () => {}
+		}
+	}
 	parse() {
 		try {
 			this.flush()
-			this.scope = {
-				init: () => {},
-				process: () => {},
-				flush: () => {}
-			}
+			this._resetScope()
 			this._parseTask = new Function( this._fnstr )
 			this._parseTask.call( this.scope )
 			this._initialized = false
