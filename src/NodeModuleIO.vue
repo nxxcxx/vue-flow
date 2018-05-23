@@ -8,10 +8,10 @@
 		</div>
 		<div ref="ioLabel" class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }"
 			@click="debug()"
-			@dblclick="editInput()"
+			@dblclick="editLabel()"
 		>
-			<span v-show="!toggleInput">{{ io.name }}</span>
-			<span v-show="toggleInput"><input class="labelInput" type="text" name="" value="" v-model="io.name"></span>
+			<span v-show="!editingLabel">{{ io.name }}</span>
+			<span v-show="editingLabel"><input class="labelInput" type="text" name="" value="" v-model="io.name"></span>
 		</div>
 	</div>
 </template>
@@ -25,12 +25,12 @@ export default {
 		return {
 			selected: false,
 			hover: false,
-			toggleInput: false
+			editingLabel: false
 		}
 	},
 	methods: {
-		editInput() {
-			this.toggleInput = !this.toggleInput
+		editLabel() {
+			this.editingLabel = true
 			this.$parent.$emit( 'update-child-io-position' )
 		},
 		isInput() { return this.io.type === 1 },
@@ -75,6 +75,10 @@ export default {
 		this.$EventBus.$on( 'vp-zoom', () => {
 			this.updatePosition()
 		} )
+		this.$EventBus.$on( 'io-label-edit-disable', () => {
+			this.editingLabel = false
+			this.updatePosition()
+		} )
 		$( this.$refs.ioPort )
 		.on( 'mousedown', ev => {
 			this.$EventBus.$emit( 'io-start-connecting', this.io )
@@ -106,6 +110,7 @@ export default {
 		} )
 		.on( 'mouseenter', ev => {
 			this.$parent.$emit( 'io-label-mouseenter', this.io )
+			this.$EventBus.$emit( 'io-label-mouseenter', this.io )
 		} )
 		.on( 'mouseleave', ev => {
 			this.$EventBus.$emit( 'io-label-mouseleave', this.io )

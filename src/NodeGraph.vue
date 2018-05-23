@@ -470,7 +470,7 @@ export default {
 		} )
 		this.$EventBus.$on( 'node-dblclick', payload => {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
-			if ( payload.node instanceof XPack && !this.ioMouseOver ) {
+			if ( payload.node instanceof XPack && !this.ioMouseOver && !this.ioLabelMouseOver ) {
 				this.viewXPack( payload.node )
 			}
 		} )
@@ -517,6 +517,14 @@ export default {
 		this.$EventBus.$on( 'io-mouse-leave', () => {
 			this.ioMouseOver = false
 		} )
+		this.$EventBus.$on( 'io-label-mouseenter', () => {
+			this.ioLabelMouseOver = true
+			console.log( 'o' )
+		} )
+		this.$EventBus.$on( 'io-label-mouseleave', () => {
+			this.ioLabelMouseOver = false
+			console.log( 'l' )
+		} )
 		this.$EventBus.$on( 'io-label-mousedown', () => {
 			this.draggingLabel = true
 		} )
@@ -529,6 +537,9 @@ export default {
 					this.vpd.leftMouseHold = true
 					if ( !this.movingNode )
 						this.$EventBus.$emit( 'selection-box-enable', ev )
+					if ( !this.ioLabelMouseOver )
+						this.$EventBus.$emit( 'io-label-edit-disable' )
+					console.log( ev )
 				}
 				if ( ev.button === 1 ) {
 					ev.preventDefault()
