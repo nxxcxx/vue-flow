@@ -103,6 +103,7 @@ class Executable {
 	}
 	parse() {
 		try {
+			this.flush()
 			this.scope = {
 				init: () => {},
 				process: () => {},
@@ -137,11 +138,9 @@ class Executable {
 		if ( processedOutput ) this.output.forEach( output => { output.data = processedOutput[ output.name ] } )
 	}
 	flush() {
-		this._initialized = false
 		this.scope.flush.call( this.scope )
 		this.input.forEach( inp => inp.flush() )
 		this.output.forEach( output => output.flush() )
-		this.parse()
 	}
 }
 

@@ -209,7 +209,6 @@ export default {
 					}
 				} )
 			}
-			rfunc( this.graph, 'flush' )
 			rfunc( this.graph, 'parse' )
 		},
 		step() {

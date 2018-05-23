@@ -5,9 +5,9 @@
       "uuid": "51c574c7-f47f-43cf-aa27-94871e871560",
       "position": {
         "x": 50,
-        "y": 128
+        "y": 152
       },
-      "_fnstr": "this.init = input => {\n  this.geometry = new THREE.IcosahedronGeometry(\n    600,\n    1\n  )\n}\n\nthis.process = input => {\n  return {\n    Geometry: this.geometry\n  }\n}\n\nthis.flush = () => {\n}\n",
+      "_fnstr": "this.init = input => {\n  this.geometry = new THREE.IcosahedronGeometry(\n    600,\n    2\n  )\n}\n\nthis.process = input => {\n  return {\n    Geometry: this.geometry\n  }\n}\n\nthis.flush = () => {\n  if ( this.geometry )\n    this.geometry.dispose()\n  delete this.geometry\n}\n",
       "input": [],
       "output": [
         {
@@ -23,9 +23,9 @@
       "uuid": "36a91bc9-d44a-4c1a-a880-f714d12ce8aa",
       "position": {
         "x": 50,
-        "y": 184
+        "y": 203
       },
-      "_fnstr": "this.init = input => {\n  this.material = new THREE.MeshBasicMaterial( { \n    \tcolor: 0xffffff, \n    \twireframe: true,\n      wireframeLinewidth: 2\n  \t}\n  )\n}\n\nthis.process = input => {\n  return {\n    Material: this.material\n  }\n}\n\nthis.flush = () => {\n}\n",
+      "_fnstr": "this.init = input => {\n  this.material = new THREE.MeshBasicMaterial( { \n    \tcolor: 0xffffff, \n    \twireframe: true,\n      wireframeLinewidth: 2\n  \t}\n  )\n}\n\nthis.process = input => {\n  return {\n    Material: this.material\n  }\n}\n\nthis.flush = () => {\n  if ( this.material )\n    this.material.dispose()\n  delete this.material\n}\n",
       "input": [],
       "output": [
         {
@@ -40,10 +40,10 @@
       "name": "Mesh",
       "uuid": "4d9dc0b4-44ba-4626-9087-b42b3be2d5a1",
       "position": {
-        "x": 164,
-        "y": 147
+        "x": 165,
+        "y": 171
       },
-      "_fnstr": "this.init = input => {\n  this.mesh = new THREE.Mesh(\n    input.Geometry,\n    input.Material\n  )\n}\n\nthis.process = input => {\n  return {\n    Mesh: this.mesh\n  }\n}\n\nthis.flush = () => {\n}\n",
+      "_fnstr": "this.init = input => {\n  this.mesh = new THREE.Mesh(\n    input.Geometry,\n    input.Material\n  )\n}\n\nthis.process = input => {\n  return {\n    Mesh: this.mesh\n  }\n}\n\nthis.flush = () => {\n  if ( !this.mesh ) return\n    this.mesh.geometry.dispose()\n    this.mesh.material.dispose()\n  delete this.mesh\n}\n",
       "input": [
         {
           "name": "Geometry",
@@ -67,11 +67,15 @@
       "name": "Cloner",
       "uuid": "0a2752fb-5f99-4e5c-b16f-3975e01a4ebf",
       "position": {
-        "x": 316,
-        "y": 147
+        "x": 320,
+        "y": 129
       },
-      "_fnstr": "this.init = input => {\n  let c = 100\n  this.meshes = new THREE.Object3D()\n  Array( c ).fill( null ).map( x => {\n    let mesh = input.Mesh.clone()\n    mesh.material = mesh.material.clone()\n    return this.meshes.add( mesh )\n  } )\n}\n\nthis.process = input => {\n  return {\n    'Mesh[]': this.meshes\n  }\n}\n\nthis.flush = () => {\n}",
+      "_fnstr": "this.init = input => {\n  let c = input.Count\n  this.meshes = new THREE.Object3D()\n  Array( c ).fill( null ).map( x => {\n    let mesh = input.Mesh.clone()\n    mesh.material = mesh.material.clone()\n    return this.meshes.add( mesh )\n  } )\n}\n\nthis.process = input => {\n  return {\n    'Mesh[]': this.meshes\n  }\n}\n\nthis.flush = () => {\n  if ( !this.meshes ) return\n  this.meshes.children.forEach( m => {\n    m.geometry.dispose()\n    m.material.dispose()\n  } )\n  delete this.meshes\n}",
       "input": [
+        {
+          "name": "Count",
+          "uuid": "b0d2d8d2-07da-40d8-b7af-700bfcfbe928"
+        },
         {
           "name": "Mesh",
           "uuid": "5931e3cb-aebc-44a0-8d9e-8123cfe39f6b"
@@ -90,10 +94,10 @@
       "name": "DATA",
       "uuid": "68f0eb9c-0d73-4098-8e61-37bdfbb0ad18",
       "position": {
-        "x": 51,
+        "x": 53,
         "y": 50
       },
-      "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n  setTimeout( () => this.z = 1.0, 1000 )\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: 1.0 * dt,\n    Y: this.clock.elapsedTime,\n    Z: this.z\n  }\n}\n\nthis.flush = () => {\n\t\n}",
+      "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n  setTimeout( () => this.z = 1.0, 1000 )\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: 1.0 * dt,\n    Y: this.clock.elapsedTime,\n    Z: this.z,\n    C: 16\n  }\n}\n\nthis.flush = () => {\n\t\n}",
       "input": [],
       "output": [
         {
@@ -107,6 +111,10 @@
         {
           "name": "X",
           "uuid": "dd3e35b0-337b-4218-a17b-d22d001151bc"
+        },
+        {
+          "name": "C",
+          "uuid": "409e1180-5ed1-4a20-98d7-4e2e082e6ead"
         }
       ],
       "nodes": [],
@@ -116,10 +124,10 @@
       "name": "Modifier",
       "uuid": "5a42b102-b884-4cf4-855b-383b50a724b4",
       "position": {
-        "x": 476,
-        "y": 51
+        "x": 478,
+        "y": 50
       },
-      "_fnstr": "this.init = input => {\n  \n}\n\nthis.process = input => {\n  this.meshes = input.OBJ.children\n  input.OBJ.children.forEach( ( mesh, idx ) => {\n    let si = ( idx + 1 ) / 100\n  \tlet sx = Math.pow( input.D3 * ( 1.0 - si ), 3.5 ) * 10.0 + si * 1.0\n    let iv = ( 1.0 - idx / 100 ) * 0.5\n    mesh.scale.setScalar( sx * 0.5 )\n    mesh.rotation.x += input.D1 * iv\n    mesh.rotation.z += input.D1 * iv\n    mesh.rotation.y += input.D1 * iv\n    mesh.material.color.setHSL( Math.cos( ( input.D2 * 0.15) + idx * 0.005 ), 0.95, 0.5 )\n    mesh.material.transparent = true\n    mesh.material.opacity = 0.01 + ( ( 1.0 - idx / 100 ) * input.D3 * 0.8 )\n  } )\n  return {\n    OBJ: input.OBJ\n  }\n}\n\nthis.flush = () => {\n\n}",
+      "_fnstr": "this.init = input => {\n  \n}\n\nthis.process = input => {\n  this.meshes = input.OBJ.children\n  input.OBJ.children.forEach( ( mesh, idx ) => {\n    let si = ( idx + 1 ) / input.Count\n  \tlet sx = Math.pow( input.D3 * ( 1.0 - si ), 2.25 ) * 10.0 + si * 1.0\n    let iv = ( 1.0 - idx / input.Count ) * 0.5\n    mesh.scale.setScalar( sx * 0.5 )\n    mesh.rotation.x += input.D1 * iv\n    mesh.rotation.z += input.D1 * iv\n    mesh.rotation.y += input.D1 * iv\n    mesh.material.color.setHSL( Math.cos( ( input.D2 * 0.05) + idx * 0.01 ), 1.0, 0.5 )\n    mesh.material.transparent = true\n    mesh.material.opacity = 0.01 + ( ( 1.0 - idx / input.Count ) * input.D3 * 0.8 )\n  } )\n  return {\n    OBJ: input.OBJ\n  }\n}\n\nthis.flush = () => {\n\n}",
       "input": [
         {
           "name": "D3",
@@ -132,6 +140,10 @@
         {
           "name": "D1",
           "uuid": "2291b24e-092b-4b17-a039-bafc20c35ff9"
+        },
+        {
+          "name": "Count",
+          "uuid": "f0d007d6-6c2f-4c02-beb4-da3434d83696"
         },
         {
           "name": "OBJ",
@@ -151,8 +163,8 @@
       "name": "XPack-5562",
       "uuid": "55620c99-6859-4f13-9417-de608cf1b895",
       "position": {
-        "x": 609,
-        "y": 51
+        "x": 610,
+        "y": 50
       },
       "_fnstr": "",
       "input": [
@@ -168,7 +180,7 @@
           "name": "VIA",
           "uuid": "c7e6e040-c943-4dfc-ac37-cb09a627afbf",
           "position": {
-            "x": 435,
+            "x": 434,
             "y": 57
           },
           "_fnstr": "",
@@ -200,10 +212,10 @@
           "name": "CAMERA",
           "uuid": "80914c3a-70c6-4d3c-880e-f1b07e664ca6",
           "position": {
-            "x": 186,
+            "x": 185,
             "y": 50
           },
-          "_fnstr": "this.init = ( input, engine ) => {\n  this.camera = new THREE.PerspectiveCamera( 75, engine.width / engine.height, 1, 10000 )\n  this.camera.position.z = 1000\n}\n\nthis.process = ( input, engine ) => {\n  this.camera.aspect = engine.width / engine.height\n  this.camera.updateProjectionMatrix()\n  return {\n    Camera: this.camera\n  }\n}\n\nthis.flush = () => {\n}",
+          "_fnstr": "this.init = ( input, engine ) => {\n  this.camera = new THREE.PerspectiveCamera( 75, engine.width / engine.height, 1, 10000 )\n  this.camera.position.z = 1000\n}\n\nthis.process = ( input, engine ) => {\n  this.camera.aspect = engine.width / engine.height\n  this.camera.updateProjectionMatrix()\n  return {\n    Camera: this.camera\n  }\n}\n\nthis.flush = () => {\n  delete this.camera\n}",
           "input": [],
           "output": [
             {
@@ -218,10 +230,10 @@
           "name": "SCENE",
           "uuid": "ff60190e-b3cf-47d0-9188-e95771ca1c9c",
           "position": {
-            "x": 155,
+            "x": 154,
             "y": 101
           },
-          "_fnstr": "this.init = input => {\n  this.scene = new THREE.Scene()\n}\n\nthis.process = input => {\n  this.scene.children[ 0 ] = input.OBJ0\n  return {\n    Scene: this.scene\n  }\n}\n\nthis.flush = () => {\n}",
+          "_fnstr": "this.init = input => {\n  this.scene = new THREE.Scene()\n}\n\nthis.process = input => {\n  this.scene.children[ 0 ] = input.OBJ0\n  return {\n    Scene: this.scene\n  }\n}\n\nthis.flush = () => {\n  delete this.scene\n}",
           "input": [
             {
               "name": "OBJ0",
@@ -241,10 +253,10 @@
           "name": "RENDERER",
           "uuid": "cab842b8-f42a-4376-9f97-96d931fa2f17",
           "position": {
-            "x": 308,
+            "x": 307,
             "y": 51
           },
-          "_fnstr": "this.init = ( input, engine ) => {\n  let renderer = engine.renderer\n  renderer.setClearColor( 0x000000, 0 )\n  renderer.clear()\n}\n\nthis.process = ( input, engine ) => {\n  let renderer = engine.renderer\n  renderer.render( input.Scene, input.Camera )\n}\n\nthis.flush = () => {\n}",
+          "_fnstr": "this.init = ( input, engine ) => {\n  let renderer = engine.renderer\n  this.renderer = renderer\n  renderer.setClearColor( 0x000000, 0 )\n  renderer.clear()\n}\n\nthis.process = ( input, engine ) => {\n  let renderer = engine.renderer\n  renderer.render( input.Scene, input.Camera )\n}\n\nthis.flush = ( engine ) => {\n  if ( this.renderer )\n    this.renderer.renderLists.dispose()\n}",
           "input": [
             {
               "name": "Camera",
@@ -279,7 +291,7 @@
       "name": "XPack-3C3F",
       "uuid": "3c3f3c0e-e5c5-4f1b-9663-58ea04399af4",
       "position": {
-        "x": 258,
+        "x": 260,
         "y": 50
       },
       "_fnstr": "",
@@ -343,7 +355,7 @@
             "x": 110,
             "y": 50
           },
-          "_fnstr": "this.init = () => {\n}\n\nthis.process = () => {\n  return {\n  \tURL: 'https://soundcloud.com/nourkhan/nour-khan-tokyo-ghoul-unravel-acoustic-cover'\n  }\n}\n\nthis.flush = () => {\n}\n",
+          "_fnstr": "this.init = () => {\n}\n\nthis.process = () => {\n  return {\n  \tURL: 'https://soundcloud.com/bassti_music/desiigner-panda-bassti-lofi-remix'\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [],
           "output": [
             {
@@ -379,7 +391,7 @@
             "x": 317,
             "y": 51
           },
-          "_fnstr": "this.init = ( input ) => {\n\tlet self = this\n\tthis.audio = document.createElement(\"audio\")\n\tthis.audio.crossOrigin = \"anonymous\";\n\tthis.audio.play()\n\tthis.sourceNode = input.Context.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Context.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tlet clientParam = 'client_id=aae0cd3ce269784234bb78aa6d485394'\n  get( `http://api.soundcloud.com/resolve?url=${input.URL}&${clientParam}`, res => {\n    let track = JSON.parse( res )\n    self.audio.src = `${track.stream_url}?${clientParam}`\n  } )\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n\t}\n}",
+          "_fnstr": "this.init = ( input ) => {\n\tlet self = this\n\tthis.audio = document.createElement( 'audio' )\n\tthis.audio.crossOrigin = 'anonymous'\n\tthis.audio.play()\n  this.audio.volume = 0.5\n\tthis.sourceNode = input.Context.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Context.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tlet clientParam = 'client_id=aae0cd3ce269784234bb78aa6d485394'\n  get( `http://api.soundcloud.com/resolve?url=${input.URL}&${clientParam}`, res => {\n    let track = JSON.parse( res )\n    self.audio.src = `${track.stream_url}?${clientParam}`\n  } )\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n    this.audio.src = ''\n\t}\n}",
           "input": [
             {
               "name": "URL",
@@ -530,6 +542,14 @@
     [
       "79fbc674-8f2b-4a98-9c96-c2434889c28c",
       "61925410-6259-439c-b7cf-711302d07bb5"
+    ],
+    [
+      "409e1180-5ed1-4a20-98d7-4e2e082e6ead",
+      "b0d2d8d2-07da-40d8-b7af-700bfcfbe928"
+    ],
+    [
+      "409e1180-5ed1-4a20-98d7-4e2e082e6ead",
+      "f0d007d6-6c2f-4c02-beb4-da3434d83696"
     ]
   ]
 }
