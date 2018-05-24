@@ -10,8 +10,8 @@
 			@click="debug()"
 			@dblclick="editLabel()"
 		>
-			<span v-show="!editingLabel">{{ io.name }}</span>
-			<span v-show="editingLabel"><input class="labelInput" type="text" name="" value="" v-model="io.name"></span>
+			<span v-show="!editingLabel">{{ io.name || 'null' }}</span>
+			<span v-show="editingLabel"><input ref="inputLabel" @input="autoResizeLabel" class="labelInput" type="text" v-model="io.name" spellcheck="false"></span>
 		</div>
 	</div>
 </template>
@@ -29,7 +29,12 @@ export default {
 		}
 	},
 	methods: {
+		autoResizeLabel() {
+			let label = $( this.$refs.inputLabel )
+			label.width( Math.max( 10, label.val().length * 7 ) )
+		},
 		editLabel() {
+			this.autoResizeLabel()
 			this.editingLabel = true
 			this.$parent.$emit( 'update-child-io-position' )
 		},
@@ -178,19 +183,5 @@ export default {
 
 	.active
 		background: $b0
-
-	.labelInput
-		padding: 0px
-		border: none
-		height: 13px
-		width: 60px
-		background: rgb(42, 42, 42)
-		outline-width: 0px
-		color: white
-		font-family: monospace
-		font-size: 12px
-
-		&::selection
-			background: rgb(189, 189, 189)
 
 </style>

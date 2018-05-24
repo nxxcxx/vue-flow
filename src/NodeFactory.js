@@ -120,7 +120,7 @@ class Executable {
 		this._receivedAllOputput = true
 		this.input.forEach( inp => {
 			inp.fetchData()
-			if ( inp.data ) inpObj[ inp.name ] = inp.data
+			if ( inp.data !== null && inp.data !== undefined ) inpObj[ inp.name ] = inp.data
 			else this._receivedAllOputput = false
 		} )
 		if ( !this._receivedAllOputput ) {

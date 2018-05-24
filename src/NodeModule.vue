@@ -3,8 +3,10 @@
 		:style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }"
 		:class="{ selected, tmpSelected: node._selecting, awatingInputData: !node._receivedAllOputput }"
 	>
-		<div class="header">
-			{{ node.name }}&nbsp;<span style="float: right;">[{{ node.order }}]</span>
+		<div class="title" @mouseenter="mouseenterTitle()" @mouseleave="mouseleaveTitle()" @dblclick="editTitle()">
+			<span v-show="!editingTitle">{{ node.name || 'null' }}</span>
+			<span v-show="editingTitle"><input ref="titleInput" @input="autoResizeTitleInput" class="titleInput" type="text" v-model="node.name" spellcheck="false"></span>
+			&nbsp;<span style="float: right;">[{{ node.order }}]</span>
 		</div>
 		<div class="ioContainer">
 			<div class="inputColumn">
@@ -32,6 +34,7 @@ export default {
 	data() {
 		return {
 			prevPos: { left: 0, top: 0 },
+			editingTitle: false,
 		}
 	},
 	watch: {
@@ -40,6 +43,20 @@ export default {
 		}
 	},
 	methods: {
+		mouseenterTitle() {
+			this.$EventBus.$emit( 'node-title-mouseenter' )
+		},
+		mouseleaveTitle() {
+			this.$EventBus.$emit( 'node-title-mouseleave' )
+		},
+		editTitle() {
+			this.editingTitle = true
+			this.autoResizeTitleInput()
+		},
+		autoResizeTitleInput() {
+			let titleInput = $( this.$refs.titleInput )
+			titleInput.width( Math.max( 10, titleInput.val().length * 7 ) )
+		},
 		setSelecting() {
 			this.node._selecting = true
 		},
@@ -66,6 +83,10 @@ export default {
 	},
 	mounted() {
 		this.updateDimension()
+		this.$EventBus.$on( 'node-title-edit-disable', () => {
+			this.editingTitle = false
+			this.$emit( 'update-child-io-position' )
+		} )
 		this.$EventBus.$on( 'node-set-selecting', node => {
 			if ( node === this.node ) this.setSelecting()
 		} )
@@ -155,7 +176,7 @@ export default {
 		&.selected
 			border: 1px solid $b0
 			z-index: 5
-	.header
+	.title
 		padding: 0px 4px 2px 4px
 	.ioContainer
 		display: flex
@@ -171,4 +192,17 @@ export default {
 		display: inline-block
 	.awatingInputData
 		border: 1px solid #f9b80b
+	input
+		padding: 0px
+		border: none
+		height: 13px
+		background: rgb(42, 42, 42)
+		outline-width: 0px
+		color: white
+		font-family: monospace
+		font-size: 12px
+		min-width: 10px
+
+		&::selection
+			background: rgb(189, 189, 189)
 </style>

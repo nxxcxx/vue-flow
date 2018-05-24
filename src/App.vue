@@ -5,7 +5,8 @@
 		<div id="left">
 
 			<div style="background: black; width: 100%; height: 14px">
-				<div class="btn" @click="flushSelectedNodes">[FLUSH]</div>
+				<div class="btn" @click="parseSelectedNodes">[PSEL]</div>
+				<div class="btn" @click="flushSelectedNodes">[FSEL]</div>
 				<div class="btn" @click="parse">[PARSE]</div>
 				<div class="btn" @click="step">[STEP]</div>
 				<div class="btn" @click="loopStop">[STOP]</div>
@@ -250,6 +251,9 @@ export default {
 		},
 		flushSelectedNodes() {
 			this.selectedNodes.forEach( n => n.flush() )
+		},
+		parseSelectedNodes() {
+			this.selectedNodes.forEach( n => n.parse() )
 		},
 	},
 	created() {

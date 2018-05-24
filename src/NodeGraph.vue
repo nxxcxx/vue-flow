@@ -449,14 +449,13 @@ export default {
 				maxY = Math.max( maxY, n.position.y )
 			} )
 			let dimension = { w: maxX - minX, h: maxY - minY }
-			// TODO set vp size
 			let vp = $( this.$refs.nodeGraphRoot )
 			let vpDimension = { w: vp.width() - 150, h: vp.height() - 150 }
 			let size = Math.max( dimension.w, dimension.h )
 			let vpSize = Math.max( vpDimension.w, vpDimension.h )
 			if ( dimension.w < dimension.h )
 				vpSize = Math.min( vpDimension.w, vpDimension.h )
-			let scaleFactor = vpSize / size
+			let scaleFactor = Math.min( 1.0, vpSize / size )
 			this.setZoomFactor( scaleFactor )
 			$( this.$refs.nodeGraphRoot ).scrollLeft( minX * scaleFactor - 20 ).scrollTop( minY * scaleFactor - 20 )
 		},
@@ -519,14 +518,18 @@ export default {
 		} )
 		this.$EventBus.$on( 'io-label-mouseenter', () => {
 			this.ioLabelMouseOver = true
-			console.log( 'o' )
 		} )
 		this.$EventBus.$on( 'io-label-mouseleave', () => {
 			this.ioLabelMouseOver = false
-			console.log( 'l' )
 		} )
 		this.$EventBus.$on( 'io-label-mousedown', () => {
 			this.draggingLabel = true
+		} )
+		this.$EventBus.$on( 'node-title-mouseenter', () => {
+			this.nodeTitleMouseOver = true
+		} )
+		this.$EventBus.$on( 'node-title-mouseleave', () => {
+			this.nodeTitleMouseOver = false
 		} )
 		$( this.$refs.nodeGraphRoot )
 			.on( 'contextmenu', ev => {
@@ -539,7 +542,8 @@ export default {
 						this.$EventBus.$emit( 'selection-box-enable', ev )
 					if ( !this.ioLabelMouseOver )
 						this.$EventBus.$emit( 'io-label-edit-disable' )
-					console.log( ev )
+					if ( !this.nodeTitleMouseOver )
+						this.$EventBus.$emit( 'node-title-edit-disable' )
 				}
 				if ( ev.button === 1 ) {
 					ev.preventDefault()

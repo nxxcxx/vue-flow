@@ -22,7 +22,7 @@
       "name": "Material",
       "uuid": "36a91bc9-d44a-4c1a-a880-f714d12ce8aa",
       "position": {
-        "x": 50,
+        "x": 49,
         "y": 201
       },
       "_fnstr": "this.init = input => {\n  this.material = new THREE.MeshBasicMaterial( { \n    \tcolor: 0xffffff, \n    \twireframe: true,\n      wireframeLinewidth: 2\n  \t}\n  )\n}\n\nthis.process = input => {\n  return {\n    Material: this.material\n  }\n}\n\nthis.flush = () => {\n  if ( this.material )\n    this.material.dispose()\n  delete this.material\n}\n",
@@ -43,7 +43,7 @@
         "x": 165,
         "y": 171
       },
-      "_fnstr": "this.init = input => {\n  setTimeout( () => {\n    this.mesh = new THREE.Mesh(\n      input.Geometry,\n      input.Material\n    )\n  }, 2000 )\n}\n\nthis.process = input => {\n  return {\n    Mesh: this.mesh\n  }\n}\n\nthis.flush = () => {\n  if ( !this.mesh ) return\n    this.mesh.geometry.dispose()\n    this.mesh.material.dispose()\n  delete this.mesh\n}\n",
+      "_fnstr": "this.init = input => {\n  setTimeout( () => {\n    this.mesh = new THREE.Mesh(\n      input.Geometry,\n      input.Material\n    )\n  }, 500 )\n}\n\nthis.process = input => {\n  return {\n    Mesh: this.mesh\n  }\n}\n\nthis.flush = () => {\n  if ( !this.mesh ) return\n    this.mesh.geometry.dispose()\n    this.mesh.material.dispose()\n  delete this.mesh\n}\n",
       "input": [
         {
           "name": "Geometry",
@@ -97,7 +97,7 @@
         "x": 53,
         "y": 50
       },
-      "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n  setTimeout( () => this.z = 1.0, 1500 )\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: 1.0 * dt,\n    Y: this.clock.elapsedTime,\n    Z: this.z,\n    C: 16\n  }\n}\n\nthis.flush = () => {\n\t\n}",
+      "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n  this.z = 1.0\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: 1.0 * dt,\n    Y: this.clock.elapsedTime,\n    Z: this.z,\n    C: 16\n  }\n}\n\nthis.flush = () => {\n}",
       "input": [],
       "output": [
         {
@@ -314,8 +314,8 @@
           "name": "VIA",
           "uuid": "e2d78f85-6a74-4ac8-b33d-bdea6b60a45a",
           "position": {
-            "x": 794,
-            "y": 82
+            "x": 592,
+            "y": 85
           },
           "_fnstr": "",
           "input": [
@@ -333,8 +333,8 @@
           "name": "VIA",
           "uuid": "506da927-1310-4feb-a3ed-50438385cfe6",
           "position": {
-            "x": 43,
-            "y": 99
+            "x": 280,
+            "y": 50
           },
           "_fnstr": "",
           "input": [],
@@ -352,10 +352,10 @@
           "name": "SOUNDCLOUD URL",
           "uuid": "cdc1a18e-8af8-4745-8322-0d3688f2788f",
           "position": {
-            "x": 110,
-            "y": 50
+            "x": 50,
+            "y": 148
           },
-          "_fnstr": "this.init = () => {\n  setTimeout( () => {\n    this.URL = 'https://soundcloud.com/bassti_music/desiigner-panda-bassti-lofi-remix'\n  }, 2000 )\n}\n\nthis.process = () => {\n  return {\n  \tURL: this.URL\n  }\n}\n\nthis.flush = () => {\n  delete this.URL\n}\n",
+          "_fnstr": "this.init = () => {\n  setTimeout( () => {\n    this.URL = 'https://soundcloud.com/chilledcow/to-be-alone-lofi-hiphop-mix-pt2'\n  }, 1000 )\n}\n\nthis.process = () => {\n  return {\n  \tURL: this.URL\n  }\n}\n\nthis.flush = () => {\n  delete this.URL\n}\n",
           "input": [],
           "output": [
             {
@@ -370,14 +370,14 @@
           "name": "AUDIO",
           "uuid": "b83f8c23-91b3-443e-903d-2420409ae6fb",
           "position": {
-            "x": 150,
-            "y": 142
+            "x": 109,
+            "y": 99
           },
-          "_fnstr": "this.init = () => {\n  this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()\n}\n\nthis.process = () => {\n  return {\n  \tContext: this.audioCtx\n  }\n}\n\nthis.flush = () => {\n}\n",
+          "_fnstr": "this.init = () => {\n  this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()\n}\n\nthis.process = () => {\n  return {\n  \tCtx: this.audioCtx\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [],
           "output": [
             {
-              "name": "Context",
+              "name": "Ctx",
               "uuid": "3f4032ff-a0cf-4cc5-9134-769eb94ce169"
             }
           ],
@@ -388,21 +388,25 @@
           "name": "INP STREAM SRC",
           "uuid": "300a7782-413e-40c3-92e3-d6813d0f6a93",
           "position": {
-            "x": 317,
-            "y": 51
+            "x": 209,
+            "y": 99
           },
-          "_fnstr": "this.init = ( input ) => {\n\tlet self = this\n\tthis.audio = document.createElement( 'audio' )\n\tthis.audio.crossOrigin = 'anonymous'\n\tthis.audio.play()\n  this.audio.volume = 0.5\n\tthis.sourceNode = input.Context.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Context.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tlet clientParam = 'client_id=aae0cd3ce269784234bb78aa6d485394'\n  get( `http://api.soundcloud.com/resolve?url=${input.URL}&${clientParam}`, res => {\n    let track = JSON.parse( res )\n    self.audio.src = `${track.stream_url}?${clientParam}`\n  } )\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n    this.audio.src = ''\n\t}\n}",
+          "_fnstr": "this.init = ( input ) => {\n\tlet self = this\n\tthis.audio = document.createElement( 'audio' )\n\tthis.audio.crossOrigin = 'anonymous'\n\tthis.audio.play()\n  this.audio.volume = 0.25\n  this.audio.currentTime = Math.random() * 60 * 10\n\tthis.sourceNode = input.Ctx.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Ctx.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tlet clientParam = 'client_id=aae0cd3ce269784234bb78aa6d485394'\n  get( `http://api.soundcloud.com/resolve?url=${input.URL}&${clientParam}`, res => {\n    let track = JSON.parse( res )\n    self.audio.src = `${track.stream_url}?${clientParam}`\n  } )\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode,\n    Ctx: input.Ctx\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n    this.audio.src = ''\n\t}\n}",
           "input": [
+            {
+              "name": "Ctx",
+              "uuid": "67db3c5c-2de2-40bb-8ec7-49eef639dc8e"
+            },
             {
               "name": "URL",
               "uuid": "f7a3090c-0766-4a9c-87de-364c38cea91c"
-            },
-            {
-              "name": "Context",
-              "uuid": "67db3c5c-2de2-40bb-8ec7-49eef639dc8e"
             }
           ],
           "output": [
+            {
+              "name": "Ctx",
+              "uuid": "d8bb6480-5bee-43af-b45e-999bb61facf0"
+            },
             {
               "name": "Node",
               "uuid": "bfdbb4b9-f795-4d7f-b00a-b8d9ee291bf0"
@@ -415,28 +419,32 @@
           "name": "GAIN",
           "uuid": "0b5e0509-9ddc-4915-b37f-80507e4aad01",
           "position": {
-            "x": 476,
-            "y": 83
+            "x": 359,
+            "y": 85
           },
-          "_fnstr": "this.init = ( input ) => {\n  this.gainNode = input.Context.createGain()\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.gainNode )\n  this.gainNode.gain.value = input.Gain || 1.0\n  return {\n  \tNode: this.gainNode\n  }\n}\n\nthis.flush = () => {\n}\n",
+          "_fnstr": "this.init = ( input ) => {\n  this.gainNode = input.Ctx.createGain()\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.gainNode )\n  this.gainNode.gain.value = input.Gain || 1.0\n  return {\n  \tNode: this.gainNode,\n    Ctx: input.Ctx\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [
-            {
-              "name": "Node",
-              "uuid": "96f7984f-4f16-400c-8346-a6fd60d82ca0"
-            },
             {
               "name": "Gain",
               "uuid": "450bc860-5435-47a5-9e9f-a14c267f87cb"
             },
             {
-              "name": "Context",
+              "name": "Ctx",
               "uuid": "3db90ff7-ca85-41b8-801b-d47464e4d776"
+            },
+            {
+              "name": "Node",
+              "uuid": "96f7984f-4f16-400c-8346-a6fd60d82ca0"
             }
           ],
           "output": [
             {
               "name": "Node",
               "uuid": "54c2bb9f-ba71-4495-b81e-856b9b345ae5"
+            },
+            {
+              "name": "Ctx",
+              "uuid": "bd53de6a-745f-40d7-9d33-0680d947d611"
             }
           ],
           "nodes": [],
@@ -446,17 +454,17 @@
           "name": "ANALYZER",
           "uuid": "c9f116bf-c887-45d6-b605-c81c0a417676",
           "position": {
-            "x": 627,
-            "y": 128
+            "x": 476,
+            "y": 85
           },
-          "_fnstr": "this.init = ( input ) => {\n  this.analyzer = input.Context.createAnalyser()\n  this.analyzer.fftSize = 2048\n\tthis.freqArray = new Uint8Array( this.analyzer.frequencyBinCount )\n  // console.log( 'freqBin', this.analyzer.frequencyBinCount )\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.analyzer )\n  this.analyzer.getByteFrequencyData( this.freqArray )\n  let thres = computeAverage( this.freqArray, 0, 1024 ) / 256\n\treturn {\n\t\tFreq: thres\n\t}\n}\n\nthis.flush = () => {\n}\n\nfunction computeAverage( freqArray, start, end ) {\n\treturn freqArray.slice( start, end ).reduce( ( a, b ) => a + b ) / ( end - start )\n}",
+          "_fnstr": "this.init = ( input ) => {\n  this.analyzer = input.Ctx.createAnalyser()\n  this.analyzer.fftSize = 2048\n\tthis.freqArray = new Uint8Array( this.analyzer.frequencyBinCount )\n  // console.log( 'freqBin', this.analyzer.frequencyBinCount )\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.analyzer )\n  this.analyzer.getByteFrequencyData( this.freqArray )\n  let thres = computeAverage( this.freqArray, 0, 1024 ) / 256\n\treturn {\n\t\tFreq: thres,\n    Ctx: input.Ctx\n\t}\n}\n\nthis.flush = () => {\n}\n\nfunction computeAverage( freqArray, start, end ) {\n\treturn freqArray.slice( start, end ).reduce( ( a, b ) => a + b ) / ( end - start )\n}",
           "input": [
             {
               "name": "Node",
               "uuid": "b85a93b3-8704-4374-b641-48853a268e3e"
             },
             {
-              "name": "Context",
+              "name": "Ctx",
               "uuid": "338a8a39-b118-4d37-817e-7e6b9233560d"
             }
           ],
@@ -484,10 +492,6 @@
           "67db3c5c-2de2-40bb-8ec7-49eef639dc8e"
         ],
         [
-          "3f4032ff-a0cf-4cc5-9134-769eb94ce169",
-          "3db90ff7-ca85-41b8-801b-d47464e4d776"
-        ],
-        [
           "bfdbb4b9-f795-4d7f-b00a-b8d9ee291bf0",
           "96f7984f-4f16-400c-8346-a6fd60d82ca0"
         ],
@@ -496,12 +500,16 @@
           "b85a93b3-8704-4374-b641-48853a268e3e"
         ],
         [
-          "3f4032ff-a0cf-4cc5-9134-769eb94ce169",
+          "e683595d-a6ba-4e68-bd0a-9cf2a126ab8f",
+          "f7a3090c-0766-4a9c-87de-364c38cea91c"
+        ],
+        [
+          "bd53de6a-745f-40d7-9d33-0680d947d611",
           "338a8a39-b118-4d37-817e-7e6b9233560d"
         ],
         [
-          "e683595d-a6ba-4e68-bd0a-9cf2a126ab8f",
-          "f7a3090c-0766-4a9c-87de-364c38cea91c"
+          "d8bb6480-5bee-43af-b45e-999bb61facf0",
+          "3db90ff7-ca85-41b8-801b-d47464e4d776"
         ]
       ]
     }
