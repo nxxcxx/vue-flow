@@ -469,7 +469,10 @@ export default {
 		} )
 		this.$EventBus.$on( 'node-dblclick', payload => {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
-			if ( payload.node instanceof XPack && !this.ioMouseOver && !this.ioLabelMouseOver ) {
+			if ( payload.node instanceof XPack &&
+				!this.ioMouseOver && 
+				!this.ioLabelMouseOver &&
+				!this.nodeTitleMouseOver ) {
 				this.viewXPack( payload.node )
 			}
 		} )
