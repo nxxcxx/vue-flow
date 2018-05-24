@@ -115,13 +115,22 @@ export default {
 			}
 		},
 		pan( dx, dy ) {
-			let vp = $( this.$refs.nodeGraphRoot )
-			vp.scrollLeft( vp.scrollLeft() - dx )
-			vp.scrollTop( vp.scrollTop() - dy )
+			let nCont = $( this.$refs.nodeGraphContainer )
+			, mat = this.getContainerMatrix()
+			, sf = mat[ 0 ]
+			, xx = mat[ 4 ] + dx
+			, yy = mat[ 5 ] + dy
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
+			// pan bg
+			let nRoot = $( this.$refs.nodeGraphRoot )
+			let bgPos = nRoot.css( 'background-position' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+			let bx = dx + bgPos[ 0 ]
+			let by = dy + bgPos[ 1 ]
+			nRoot.css( 'background-position', `${bx}px ${by}px` )
 		},
 		zoom( anchor, delta ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
-			let mat = this.getContainerMatrix()
+			, mat = this.getContainerMatrix()
 			, dd = - Math.sign( delta ) * 0.1
 			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.vpd.minZoom )
 			, sd = sf / mat[ 0 ]
@@ -130,6 +139,11 @@ export default {
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
 			this.vpd.zoomFactor = sf
 			this.$EventBus.$emit( 'vp-zoom' )
+			// auto resize bg
+			// let nRoot = $( this.$refs.nodeGraphRoot )
+			// let bgSize = nRoot.css( 'background-size' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+			// let s = sf * 50.0
+			// nRoot.css( 'background-size', `${s}px ${s}px` )
 		},
 		setZoomFactor( sf ) {
 			this.vpd.zoomFactor = sf
@@ -440,6 +454,7 @@ export default {
 			$( this.$refs.nodeGraphRoot ).scrollLeft( 0 ).scrollTop( 0 )
 		},
 		centerGraphInView() {
+			this.normalizeView( this.graphView )
 			let [ minX, maxX ] = [ Infinity, - Infinity ]
 			let [ minY, maxY ] = [ Infinity, - Infinity ]
 			this.graphView.nodes.forEach( n => {
@@ -470,7 +485,7 @@ export default {
 		this.$EventBus.$on( 'node-dblclick', payload => {
 			if ( this.selectedNodes.length === 1 ) console.log( this.selectedNodes[ 0 ] )
 			if ( payload.node instanceof XPack &&
-				!this.ioMouseOver && 
+				!this.ioMouseOver &&
 				!this.ioLabelMouseOver &&
 				!this.nodeTitleMouseOver ) {
 				this.viewXPack( payload.node )
@@ -615,7 +630,8 @@ export default {
 					this.selectedNodes.length > 0 &&
 					this.movingNode &&
 					!this.draggingLabel &&
-					!this.ioConnecting
+					!this.ioConnecting &&
+					!this.nodeTitleMouseOver
 				) {
 					this.selectedNodes.forEach( n => {
 						this.$EventBus.$emit( 'node-move', {
@@ -637,19 +653,23 @@ export default {
 		user-select: none
 		cursor: default
 		transform-style: preserve-3d
-		overflow: scroll
+		// overflow: scroll
+		overflow: hidden
 		position: absolute
 		height: 100%
 		width: 100%
+		background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
+		background-size: 50px 50px
+		background-position: 13px 42px
 	.nodeGraphContainer
 		background-color: transparent
-		background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
+		// background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
 		background-size: 50px 50px
 		overflow: visible
 		pointer-events: none
 		position: absolute
-		width: 5000px
-		height: 5000px
+		width: 100%
+		height: 100%
 		transform-origin: 0px 0px
 		transform: matrix( 1, 0, 0, 1, 0, 0 )
 		user-select: none

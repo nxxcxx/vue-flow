@@ -1,56 +1,11 @@
 {
   "nodes": [
     {
-      "name": "Geometry",
-      "uuid": "51c574c7-f47f-43cf-aa27-94871e871560",
-      "position": {
-        "x": 401,
-        "y": 242
-      },
-      "_fnstr": "this.init = input => {\n  \n\n  this.geometry = new THREE.IcosahedronBufferGeometry(\n      300,\n      4\n  )\n\n}\n\nthis.process = input => {\n  return {\n    Geometry: this.geometry\n  }\n}\n\nthis.flush = () => {\n  if ( this.geometry )\n    this.geometry.dispose()\n  delete this.geometry\n}\n",
-      "input": [],
-      "output": [
-        {
-          "name": "Geometry",
-          "uuid": "6d69b216-e2ea-4a7d-8cb5-3d62bdbaf241"
-        }
-      ],
-      "nodes": [],
-      "connections": []
-    },
-    {
-      "name": "Mesh",
-      "uuid": "4d9dc0b4-44ba-4626-9087-b42b3be2d5a1",
-      "position": {
-        "x": 650,
-        "y": 194
-      },
-      "_fnstr": "this.init = input => {\n  setTimeout( () => {\n    this.mesh = new THREE.Mesh(\n      input.Geometry,\n      input.Material\n    )\n  }, 500 )\n}\n\nthis.process = input => {\n  return {\n    Mesh: this.mesh\n  }\n}\n\nthis.flush = () => {\n  if ( !this.mesh ) return\n    this.mesh.geometry.dispose()\n    this.mesh.material.dispose()\n  delete this.mesh\n}\n",
-      "input": [
-        {
-          "name": "Material",
-          "uuid": "1d14ce97-8ba8-4e0d-9a57-9c592b859331"
-        },
-        {
-          "name": "Geometry",
-          "uuid": "53fdc96c-5491-4483-8b19-7b42f2fe71c8"
-        }
-      ],
-      "output": [
-        {
-          "name": "Mesh",
-          "uuid": "89717ab8-b273-46d2-a24b-9a8c6a63a3d8"
-        }
-      ],
-      "nodes": [],
-      "connections": []
-    },
-    {
       "name": "Cloner",
       "uuid": "0a2752fb-5f99-4e5c-b16f-3975e01a4ebf",
       "position": {
-        "x": 861,
-        "y": 144
+        "x": 296,
+        "y": 169
       },
       "_fnstr": "this.init = input => {\n  let c = input.Count\n  this.meshes = new THREE.Object3D()\n  Array( c ).fill( null ).map( x => {\n    let mesh = input.Mesh.clone()\n    mesh.material = mesh.material.clone()\n    return this.meshes.add( mesh )\n  } )\n}\n\nthis.process = input => {\n  return {\n    'Mesh[]': this.meshes\n  }\n}\n\nthis.flush = () => {\n  if ( !this.meshes ) return\n  this.meshes.children.forEach( m => {\n    m.geometry.dispose()\n    m.material.dispose()\n  } )\n  delete this.meshes\n}",
       "input": [
@@ -77,25 +32,25 @@
       "uuid": "68f0eb9c-0d73-4098-8e61-37bdfbb0ad18",
       "position": {
         "x": 50,
-        "y": 50
+        "y": 85
       },
-      "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n  this.z = 1.0\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    X: dt,\n    Y: this.clock.elapsedTime,\n    Z: this.z,\n    C: 100\n  }\n}\n\nthis.flush = () => {\n}",
+      "_fnstr": "this.init = () => {\n\tthis.clock = new THREE.Clock()\n}\n\nthis.process = () => {\n  let dt = this.clock.getDelta()\n  return {\n    Delta: dt,\n    Time: this.clock.elapsedTime,\n    Count: 100,\n    Gain: 1.0,\n  }\n}\n\nthis.flush = () => {\n}",
       "input": [],
       "output": [
         {
-          "name": "Z",
+          "name": "Gain",
           "uuid": "e5e379b8-d8c8-447c-9f14-747d35e81697"
         },
         {
-          "name": "Y",
+          "name": "Time",
           "uuid": "b8855666-0218-47e6-be76-a022ba3bc1d2"
         },
         {
-          "name": "X",
+          "name": "Delta",
           "uuid": "dd3e35b0-337b-4218-a17b-d22d001151bc"
         },
         {
-          "name": "C",
+          "name": "Count",
           "uuid": "409e1180-5ed1-4a20-98d7-4e2e082e6ead"
         }
       ],
@@ -106,21 +61,21 @@
       "name": "Modifier",
       "uuid": "5a42b102-b884-4cf4-855b-383b50a724b4",
       "position": {
-        "x": 1022,
-        "y": 56
+        "x": 440,
+        "y": 86
       },
-      "_fnstr": "this.init = input => {\n}\n\nthis.process = input => {\n  this.meshes = input.OBJ.children\n  input.OBJ.children.forEach( ( mesh, idx ) => {\n    let si = ( idx + 1 ) / input.Count\n  \tlet sx = Math.pow( input.D3 * ( 1.0 - si ), 2.25 ) * 10.0 + si * 1.0\n    let iv = ( 1.0 - idx / input.Count ) * 0.5\n    mesh.scale.setScalar( sx )\n    mesh.rotation.x += input.D1 * iv\n    mesh.rotation.z += input.D1 * iv\n    mesh.rotation.y += input.D1 * iv\n    mesh.material.uniforms.time.value = input.D2\n    mesh.material.uniforms.freq.value = input.D3 * ( 1.5 - si ) * sx\n    mesh.material.uniforms.color.value.setHSL( Math.cos( ( input.D2 * 0.05 ) + idx * ( 0.33 / input.Count ) ), 1.0, 0.5 )\n    mesh.material.uniforms.opacity.value = 0.001 + ( ( 1.0 - idx / input.Count ) * input.D3 * 0.5 )\n    \n  } )\n  return {\n    OBJ: input.OBJ\n  }\n}\n\nthis.flush = () => {\n}",
+      "_fnstr": "this.init = input => {\n}\n\nthis.process = input => {\n  this.meshes = input.OBJ.children\n  input.OBJ.children.forEach( ( mesh, idx ) => {\n    let si = ( idx + 1 ) / input.Count\n  \tlet sx = Math.pow( input.Freq * ( 1.0 - si ), 2.25 ) * 10.0 + si * 1.0\n    let iv = ( 1.0 - idx / input.Count ) * 0.5\n    mesh.scale.setScalar( sx )\n    mesh.rotation.x += input.Delta * iv\n    mesh.rotation.z += input.Delta * iv\n    mesh.rotation.y += input.Delta * iv\n    mesh.material.uniforms.time.value = input.Time\n    mesh.material.uniforms.freq.value = input.Freq * ( 1.5 - si ) * sx\n    mesh.material.uniforms.color.value.setHSL( Math.cos( ( input.Time * 0.05 ) + idx * ( 0.33 / input.Count ) ), 1.0, 0.5 )\n    mesh.material.uniforms.opacity.value = 0.001 + ( ( 1.0 - idx / input.Count ) * input.Freq * 0.5 )\n    \n  } )\n  return {\n    OBJ: input.OBJ\n  }\n}\n\nthis.flush = () => {\n}",
       "input": [
         {
-          "name": "D3",
+          "name": "Freq",
           "uuid": "61925410-6259-439c-b7cf-711302d07bb5"
         },
         {
-          "name": "D2",
+          "name": "Time",
           "uuid": "390cb6c1-bfd9-4e24-a0ed-006eb8e91b50"
         },
         {
-          "name": "D1",
+          "name": "Delta",
           "uuid": "2291b24e-092b-4b17-a039-bafc20c35ff9"
         },
         {
@@ -145,8 +100,8 @@
       "name": "XPack-5562",
       "uuid": "55620c99-6859-4f13-9417-de608cf1b895",
       "position": {
-        "x": 1186,
-        "y": 97
+        "x": 568,
+        "y": 86
       },
       "_fnstr": "",
       "input": [
@@ -162,8 +117,8 @@
           "name": "VIA",
           "uuid": "c7e6e040-c943-4dfc-ac37-cb09a627afbf",
           "position": {
-            "x": 433,
-            "y": 56
+            "x": 389,
+            "y": 55
           },
           "_fnstr": "",
           "input": [],
@@ -194,7 +149,7 @@
           "name": "CAMERA",
           "uuid": "80914c3a-70c6-4d3c-880e-f1b07e664ca6",
           "position": {
-            "x": 184,
+            "x": 158,
             "y": 50
           },
           "_fnstr": "this.init = ( input, engine ) => {\n  this.camera = new THREE.PerspectiveCamera( 75, engine.width / engine.height, 1, 10000 )\n  this.camera.position.z = 1000\n  // this.camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 )\n}\n\nthis.process = ( input, engine ) => {\n  this.camera.aspect = engine.width / engine.height\n  this.camera.updateProjectionMatrix()\n  return {\n    Camera: this.camera\n  }\n}\n\nthis.flush = () => {\n  delete this.camera\n}",
@@ -212,8 +167,8 @@
           "name": "SCENE",
           "uuid": "ff60190e-b3cf-47d0-9188-e95771ca1c9c",
           "position": {
-            "x": 153,
-            "y": 100
+            "x": 134,
+            "y": 99
           },
           "_fnstr": "this.init = input => {\n  this.scene = new THREE.Scene()\n}\n\nthis.process = input => {\n  this.scene.children[ 0 ] = input.OBJ0\n  return {\n    Scene: this.scene\n  }\n}\n\nthis.flush = () => {\n  delete this.scene\n}",
           "input": [
@@ -235,7 +190,7 @@
           "name": "RENDERER",
           "uuid": "cab842b8-f42a-4376-9f97-96d931fa2f17",
           "position": {
-            "x": 306,
+            "x": 262,
             "y": 50
           },
           "_fnstr": "this.init = ( input, engine ) => {\n  let renderer = engine.renderer\n  this.renderer = renderer\n  renderer.setClearColor( 0x000000, 0 )\n  renderer.clear()\n}\n\nthis.process = ( input, engine ) => {\n  let renderer = engine.renderer\n  renderer.render( input.Scene, input.Camera )\n}\n\nthis.flush = ( engine ) => {\n  if ( this.renderer )\n    this.renderer.renderLists.dispose()\n}",
@@ -270,52 +225,33 @@
       ]
     },
     {
-      "name": "XPack-3C3F",
-      "uuid": "3c3f3c0e-e5c5-4f1b-9663-58ea04399af4",
+      "name": "XPack-6B1E",
+      "uuid": "6b1e2fe0-0183-4507-a47c-0115739b5beb",
       "position": {
-        "x": 164,
-        "y": 50
+        "x": 162,
+        "y": 85
       },
       "_fnstr": "",
       "input": [
         {
           "name": "Gain",
-          "uuid": "5aa1061d-bda1-478e-ad30-125242d87db9",
-          "_via": "a28113da-8d39-4ffb-96a4-68190744e583"
+          "uuid": "ef08f013-45e4-484b-a593-445ad6766b88",
+          "_via": "5dabaed8-e537-4bf8-8143-47cc65d298f3"
         }
       ],
       "output": [
         {
           "name": "Freq",
-          "uuid": "79fbc674-8f2b-4a98-9c96-c2434889c28c",
-          "_via": "62a7731c-c05a-4fc6-8eb7-98f25246be2f"
+          "uuid": "06353fc3-8074-45a0-91c0-359c228f1ef3",
+          "_via": "b9b76f45-c707-40cc-96d2-ebe48898427a"
         }
       ],
       "nodes": [
         {
           "name": "VIA",
-          "uuid": "e2d78f85-6a74-4ac8-b33d-bdea6b60a45a",
+          "uuid": "472250c2-4afc-4972-9fa0-bc3763ce271f",
           "position": {
-            "x": 592,
-            "y": 85
-          },
-          "_fnstr": "",
-          "input": [
-            {
-              "name": "Freq",
-              "uuid": "62a7731c-c05a-4fc6-8eb7-98f25246be2f",
-              "_via": "79fbc674-8f2b-4a98-9c96-c2434889c28c"
-            }
-          ],
-          "output": [],
-          "nodes": [],
-          "connections": []
-        },
-        {
-          "name": "VIA",
-          "uuid": "506da927-1310-4feb-a3ed-50438385cfe6",
-          "position": {
-            "x": 280,
+            "x": 283,
             "y": 50
           },
           "_fnstr": "",
@@ -323,10 +259,29 @@
           "output": [
             {
               "name": "Gain",
-              "uuid": "a28113da-8d39-4ffb-96a4-68190744e583",
-              "_via": "5aa1061d-bda1-478e-ad30-125242d87db9"
+              "uuid": "5dabaed8-e537-4bf8-8143-47cc65d298f3",
+              "_via": "ef08f013-45e4-484b-a593-445ad6766b88"
             }
           ],
+          "nodes": [],
+          "connections": []
+        },
+        {
+          "name": "VIA",
+          "uuid": "01dca6a1-0a2c-46f8-8fbf-5df82cd56ddf",
+          "position": {
+            "x": 587,
+            "y": 81
+          },
+          "_fnstr": "",
+          "input": [
+            {
+              "name": "Freq",
+              "uuid": "b9b76f45-c707-40cc-96d2-ebe48898427a",
+              "_via": "06353fc3-8074-45a0-91c0-359c228f1ef3"
+            }
+          ],
+          "output": [],
           "nodes": [],
           "connections": []
         },
@@ -335,7 +290,7 @@
           "uuid": "cdc1a18e-8af8-4745-8322-0d3688f2788f",
           "position": {
             "x": 50,
-            "y": 148
+            "y": 60
           },
           "_fnstr": "this.init = () => {\n  setTimeout( () => {\n    this.URL = 'https://soundcloud.com/chilledcow/to-be-alone-lofi-hiphop-mix-pt2'\n  }, 1000 )\n}\n\nthis.process = () => {\n  return {\n  \tURL: this.URL\n  }\n}\n\nthis.flush = () => {\n  delete this.URL\n}\n",
           "input": [],
@@ -352,8 +307,8 @@
           "name": "AUDIO",
           "uuid": "b83f8c23-91b3-443e-903d-2420409ae6fb",
           "position": {
-            "x": 109,
-            "y": 99
+            "x": 107,
+            "y": 108
           },
           "_fnstr": "this.init = () => {\n  this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()\n}\n\nthis.process = () => {\n  return {\n  \tCtx: this.audioCtx\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [],
@@ -370,28 +325,28 @@
           "name": "INP STREAM SRC",
           "uuid": "300a7782-413e-40c3-92e3-d6813d0f6a93",
           "position": {
-            "x": 209,
-            "y": 99
+            "x": 205,
+            "y": 95
           },
           "_fnstr": "this.init = ( input ) => {\n\tlet self = this\n\tthis.audio = document.createElement( 'audio' )\n\tthis.audio.crossOrigin = 'anonymous'\n\tthis.audio.play()\n  this.audio.volume = 0.25\n  this.audio.currentTime = Math.random() * 60 * 10\n\tthis.sourceNode = input.Ctx.createMediaElementSource( this.audio )\n\tthis.sourceNode.connect( input.Ctx.destination )\n  \n\tfunction get( url, callback ) {\n\t\tvar request = new XMLHttpRequest()\n\t\trequest.onreadystatechange = () => { \n\t\t\tif ( request.readyState === 4 && request.status === 200 ) {\n\t\t\t\tcallback( request.responseText )\n\t\t\t}\n\t\t}\n\t\trequest.open( 'GET', url, true )\n\t\trequest.send( null )\n\t}\n\n\tlet clientParam = 'client_id=aae0cd3ce269784234bb78aa6d485394'\n  get( `http://api.soundcloud.com/resolve?url=${input.URL}&${clientParam}`, res => {\n    let track = JSON.parse( res )\n    self.audio.src = `${track.stream_url}?${clientParam}`\n  } )\n\t\n}\n\nthis.process = ( input ) => {\n\treturn {\n\t\tNode: this.sourceNode,\n    Ctx: input.Ctx\n\t}\n}\n\nthis.flush = () => {\n\tif ( this.audio ) {\n\t\tthis.audio.pause()\n\t\tthis.audio.currentTime = 0\n    this.audio.src = ''\n\t}\n}",
           "input": [
             {
-              "name": "Ctx",
-              "uuid": "67db3c5c-2de2-40bb-8ec7-49eef639dc8e"
-            },
-            {
               "name": "URL",
               "uuid": "f7a3090c-0766-4a9c-87de-364c38cea91c"
+            },
+            {
+              "name": "Ctx",
+              "uuid": "67db3c5c-2de2-40bb-8ec7-49eef639dc8e"
             }
           ],
           "output": [
             {
-              "name": "Ctx",
-              "uuid": "d8bb6480-5bee-43af-b45e-999bb61facf0"
-            },
-            {
               "name": "Node",
               "uuid": "bfdbb4b9-f795-4d7f-b00a-b8d9ee291bf0"
+            },
+            {
+              "name": "Ctx",
+              "uuid": "d8bb6480-5bee-43af-b45e-999bb61facf0"
             }
           ],
           "nodes": [],
@@ -401,8 +356,8 @@
           "name": "GAIN",
           "uuid": "0b5e0509-9ddc-4915-b37f-80507e4aad01",
           "position": {
-            "x": 359,
-            "y": 85
+            "x": 360,
+            "y": 81
           },
           "_fnstr": "this.init = ( input ) => {\n  this.gainNode = input.Ctx.createGain()\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.gainNode )\n  this.gainNode.gain.value = input.Gain || 1.0\n  return {\n  \tNode: this.gainNode,\n    Ctx: input.Ctx\n  }\n}\n\nthis.flush = () => {\n}\n",
           "input": [
@@ -411,12 +366,12 @@
               "uuid": "450bc860-5435-47a5-9e9f-a14c267f87cb"
             },
             {
-              "name": "Ctx",
-              "uuid": "3db90ff7-ca85-41b8-801b-d47464e4d776"
-            },
-            {
               "name": "Node",
               "uuid": "96f7984f-4f16-400c-8346-a6fd60d82ca0"
+            },
+            {
+              "name": "Ctx",
+              "uuid": "3db90ff7-ca85-41b8-801b-d47464e4d776"
             }
           ],
           "output": [
@@ -436,8 +391,8 @@
           "name": "ANALYZER",
           "uuid": "c9f116bf-c887-45d6-b605-c81c0a417676",
           "position": {
-            "x": 476,
-            "y": 85
+            "x": 474,
+            "y": 80
           },
           "_fnstr": "this.init = ( input ) => {\n  this.analyzer = input.Ctx.createAnalyser()\n  this.analyzer.fftSize = 2048\n\tthis.freqArray = new Uint8Array( this.analyzer.frequencyBinCount )\n  // console.log( 'freqBin', this.analyzer.frequencyBinCount )\n}\n\nthis.process = ( input ) => {\n  input.Node && input.Node.connect( this.analyzer )\n  this.analyzer.getByteFrequencyData( this.freqArray )\n  let thres = computeAverage( this.freqArray, 0, 1024 ) / 256\n\treturn {\n\t\tFreq: thres,\n    Ctx: input.Ctx\n\t}\n}\n\nthis.flush = () => {\n}\n\nfunction computeAverage( freqArray, start, end ) {\n\treturn freqArray.slice( start, end ).reduce( ( a, b ) => a + b ) / ( end - start )\n}",
           "input": [
@@ -462,12 +417,16 @@
       ],
       "connections": [
         [
-          "a28113da-8d39-4ffb-96a4-68190744e583",
+          "5dabaed8-e537-4bf8-8143-47cc65d298f3",
           "450bc860-5435-47a5-9e9f-a14c267f87cb"
         ],
         [
           "b8ebc478-00fa-4ee4-a3d9-bdae27e838b4",
-          "62a7731c-c05a-4fc6-8eb7-98f25246be2f"
+          "b9b76f45-c707-40cc-96d2-ebe48898427a"
+        ],
+        [
+          "e683595d-a6ba-4e68-bd0a-9cf2a126ab8f",
+          "f7a3090c-0766-4a9c-87de-364c38cea91c"
         ],
         [
           "3f4032ff-a0cf-4cc5-9134-769eb94ce169",
@@ -478,92 +437,259 @@
           "96f7984f-4f16-400c-8346-a6fd60d82ca0"
         ],
         [
+          "d8bb6480-5bee-43af-b45e-999bb61facf0",
+          "3db90ff7-ca85-41b8-801b-d47464e4d776"
+        ],
+        [
           "54c2bb9f-ba71-4495-b81e-856b9b345ae5",
           "b85a93b3-8704-4374-b641-48853a268e3e"
         ],
         [
-          "e683595d-a6ba-4e68-bd0a-9cf2a126ab8f",
-          "f7a3090c-0766-4a9c-87de-364c38cea91c"
-        ],
-        [
           "bd53de6a-745f-40d7-9d33-0680d947d611",
           "338a8a39-b118-4d37-817e-7e6b9233560d"
-        ],
-        [
-          "d8bb6480-5bee-43af-b45e-999bb61facf0",
-          "3db90ff7-ca85-41b8-801b-d47464e4d776"
         ]
       ]
     },
     {
-      "name": "SHADER",
-      "uuid": "3542237a-77fb-4736-9e72-a7748ed5ff84",
+      "name": "XPack-D499",
+      "uuid": "d49920cc-29da-4e7b-8781-c76430dcd23e",
       "position": {
-        "x": 202,
-        "y": 146
+        "x": 114,
+        "y": 197
       },
-      "_fnstr": "this.init = () => {\n  this.shader = `\nvarying vec2 vUv;\nuniform float time;\nuniform float freq;\n\n#define PI 3.14159265\n\nfloat orenNayarDiffuse(\n  vec3 lightDirection,\n  vec3 viewDirection,\n  vec3 surfaceNormal,\n  float roughness,\n  float albedo) {\n  \n  float LdotV = dot(lightDirection, viewDirection);\n  float NdotL = dot(lightDirection, surfaceNormal);\n  float NdotV = dot(surfaceNormal, viewDirection);\n\n  float s = LdotV - NdotL * NdotV;\n  float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));\n\n  float sigma2 = roughness * roughness;\n  float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));\n  float B = 0.45 * sigma2 / (sigma2 + 0.09);\n\n  return albedo * max(0.0, NdotL) * (A + B * s / t) / PI;\n}\n\nfloat gaussianSpecular(\n  vec3 lightDirection,\n  vec3 viewDirection,\n  vec3 surfaceNormal,\n  float shininess) {\n  vec3 H = normalize(lightDirection + viewDirection);\n  float theta = acos(dot(H, surfaceNormal));\n  float w = theta / shininess;\n  return exp(-w*w);\n}\n\nfloat fogFactorExp2(\n  const float dist,\n  const float density\n) {\n  const float LOG2 = -1.442695;\n  float d = density * dist;\n  return 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);\n}\n\n//\n// Description : Array and textureless GLSL 2D/3D/4D simplex\n//               noise functions.\n//      Author : Ian McEwan, Ashima Arts.\n//  Maintainer : ijm\n//     Lastmod : 20110822 (ijm)\n//     License : Copyright (C) 2011 Ashima Arts. All rights reserved.\n//               Distributed under the MIT License. See LICENSE file.\n//               https://github.com/ashima/webgl-noise\n//\n\nvec4 mod289(vec4 x) {\n  return x - floor(x * (1.0 / 289.0)) * 289.0; }\n\nfloat mod289(float x) {\n  return x - floor(x * (1.0 / 289.0)) * 289.0; }\n\nvec4 permute(vec4 x) {\n     return mod289(((x*34.0)+1.0)*x);\n}\n\nfloat permute(float x) {\n     return mod289(((x*34.0)+1.0)*x);\n}\n\nvec4 taylorInvSqrt(vec4 r)\n{\n  return 1.79284291400159 - 0.85373472095314 * r;\n}\n\nfloat taylorInvSqrt(float r)\n{\n  return 1.79284291400159 - 0.85373472095314 * r;\n}\n\nvec4 grad4(float j, vec4 ip)\n  {\n  const vec4 ones = vec4(1.0, 1.0, 1.0, -1.0);\n  vec4 p,s;\n\n  p.xyz = floor( fract (vec3(j) * ip.xyz) * 7.0) * ip.z - 1.0;\n  p.w = 1.5 - dot(abs(p.xyz), ones.xyz);\n  s = vec4(lessThan(p, vec4(0.0)));\n  p.xyz = p.xyz + (s.xyz*2.0 - 1.0) * s.www;\n\n  return p;\n  }\n\n// (sqrt(5) - 1)/4 = F4, used once below\n#define F4 0.309016994374947451\n\nfloat snoise(vec4 v)\n  {\n  const vec4  C = vec4( 0.138196601125011,  // (5 - sqrt(5))/20  G4\n                        0.276393202250021,  // 2 * G4\n                        0.414589803375032,  // 3 * G4\n                       -0.447213595499958); // -1 + 4 * G4\n\n// First corner\n  vec4 i  = floor(v + dot(v, vec4(F4)) );\n  vec4 x0 = v -   i + dot(i, C.xxxx);\n\n// Other corners\n\n// Rank sorting originally contributed by Bill Licea-Kane, AMD (formerly ATI)\n  vec4 i0;\n  vec3 isX = step( x0.yzw, x0.xxx );\n  vec3 isYZ = step( x0.zww, x0.yyz );\n//  i0.x = dot( isX, vec3( 1.0 ) );\n  i0.x = isX.x + isX.y + isX.z;\n  i0.yzw = 1.0 - isX;\n//  i0.y += dot( isYZ.xy, vec2( 1.0 ) );\n  i0.y += isYZ.x + isYZ.y;\n  i0.zw += 1.0 - isYZ.xy;\n  i0.z += isYZ.z;\n  i0.w += 1.0 - isYZ.z;\n\n  // i0 now contains the unique values 0,1,2,3 in each channel\n  vec4 i3 = clamp( i0, 0.0, 1.0 );\n  vec4 i2 = clamp( i0-1.0, 0.0, 1.0 );\n  vec4 i1 = clamp( i0-2.0, 0.0, 1.0 );\n\n  //  x0 = x0 - 0.0 + 0.0 * C.xxxx\n  //  x1 = x0 - i1  + 1.0 * C.xxxx\n  //  x2 = x0 - i2  + 2.0 * C.xxxx\n  //  x3 = x0 - i3  + 3.0 * C.xxxx\n  //  x4 = x0 - 1.0 + 4.0 * C.xxxx\n  vec4 x1 = x0 - i1 + C.xxxx;\n  vec4 x2 = x0 - i2 + C.yyyy;\n  vec4 x3 = x0 - i3 + C.zzzz;\n  vec4 x4 = x0 + C.wwww;\n\n// Permutations\n  i = mod289(i);\n  float j0 = permute( permute( permute( permute(i.w) + i.z) + i.y) + i.x);\n  vec4 j1 = permute( permute( permute( permute (\n             i.w + vec4(i1.w, i2.w, i3.w, 1.0 ))\n           + i.z + vec4(i1.z, i2.z, i3.z, 1.0 ))\n           + i.y + vec4(i1.y, i2.y, i3.y, 1.0 ))\n           + i.x + vec4(i1.x, i2.x, i3.x, 1.0 ));\n\n// Gradients: 7x7x6 points over a cube, mapped onto a 4-cross polytope\n// 7*7*6 = 294, which is close to the ring size 17*17 = 289.\n  vec4 ip = vec4(1.0/294.0, 1.0/49.0, 1.0/7.0, 0.0) ;\n\n  vec4 p0 = grad4(j0,   ip);\n  vec4 p1 = grad4(j1.x, ip);\n  vec4 p2 = grad4(j1.y, ip);\n  vec4 p3 = grad4(j1.z, ip);\n  vec4 p4 = grad4(j1.w, ip);\n\n// Normalise gradients\n  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n  p0 *= norm.x;\n  p1 *= norm.y;\n  p2 *= norm.z;\n  p3 *= norm.w;\n  p4 *= taylorInvSqrt(dot(p4,p4));\n\n// Mix contributions from the five corners\n  vec3 m0 = max(0.6 - vec3(dot(x0,x0), dot(x1,x1), dot(x2,x2)), 0.0);\n  vec2 m1 = max(0.6 - vec2(dot(x3,x3), dot(x4,x4)            ), 0.0);\n  m0 = m0 * m0;\n  m1 = m1 * m1;\n  return 49.0 * ( dot(m0*m0, vec3( dot( p0, x0 ), dot( p1, x1 ), dot( p2, x2 )))\n               + dot(m1*m1, vec2( dot( p3, x3 ), dot( p4, x4 ) ) ) ) ;\n\n}\n\n\n\nvoid main()\t{\n  vUv = uv;\n  float n = snoise( vec4( position * 0.005, time * 1.0 ) );\n\tvec3 normal = normalize( position ) * n * freq * 1000.0;\n  vec4 mvPosition = modelViewMatrix * vec4( position + normal, 1.0 );\n  gl_Position = projectionMatrix * mvPosition;\n}\n  `\n  \n}\n\nthis.process = () => {\n  return { VS: this.shader }\n}",
+      "_fnstr": "",
       "input": [],
       "output": [
         {
-          "name": "VS",
-          "uuid": "8bd2e18a-01e8-4482-9e01-f8894b221b9d"
+          "name": "Mesh",
+          "uuid": "b009a43f-709d-48e2-8bd1-527eedcac2f7",
+          "_via": "c06038a8-176b-43b6-9c87-1524d51da643"
         }
       ],
-      "nodes": [],
-      "connections": []
-    },
-    {
-      "name": "SHADER",
-      "uuid": "a0a72fa1-75dc-49c7-855f-19c5115a5c5c",
-      "position": {
-        "x": 201,
-        "y": 203
-      },
-      "_fnstr": "this.init = () => {\n  this.shader = `\n\n\t\tvarying vec2 vUv;\n\t\tuniform float time;\n\t\tuniform float opacity;\n\t\tuniform vec3 color;\n\n    void main()\t{\n    \tgl_FragColor = vec4( color, opacity );\n    }\n\n  `\n  \n}\n\nthis.process = () => {\n  return { FS: this.shader }\n}",
-      "input": [],
-      "output": [
+      "nodes": [
         {
-          "name": "FS",
-          "uuid": "4fba1c56-58c3-42fb-8831-febbca4c25fb"
-        }
-      ],
-      "nodes": [],
-      "connections": []
-    },
-    {
-      "name": "SHADER MATERIAL",
-      "uuid": "e44ad26d-fc41-4393-9af8-bbfe1407d593",
-      "position": {
-        "x": 357,
-        "y": 167
-      },
-      "_fnstr": "this.init = input => {\n  this.uniforms = { \n    time: { value: 1.0 },\n  \tfreq: { value: 1.0 },\n    color: { value: new THREE.Color() },\n    opacity: { value: 1.0 },\n  }\n  this.material = new THREE.ShaderMaterial( { \n\t\tuniforms: this.uniforms,\n    vertexShader: input.VS,\n    fragmentShader: input.FS,\n    wireframe: true,\n    wireframeLinewidth: 1,\n    transparent: true,\n    blending: THREE.AdditiveBlending,\n  } )\n}\n\nthis.process = input => {\n  return {\n    Material: this.material\n  }\n}\n\nthis.flush = () => {\n  if ( this.material )\n    this.material.dispose()\n  delete this.material\n}\n",
-      "input": [
-        {
-          "name": "VS",
-          "uuid": "3337c08f-0efe-4f26-9ed8-e642852e632a"
+          "name": "VIA",
+          "uuid": "6d642bd1-4990-429b-881e-6160e0d08067",
+          "position": {
+            "x": 50,
+            "y": 50
+          },
+          "_fnstr": "",
+          "input": [],
+          "output": [],
+          "nodes": [],
+          "connections": []
         },
         {
-          "name": "FS",
-          "uuid": "5451002a-b9ba-4cb1-8fc6-17a11bee4d7c"
-        }
-      ],
-      "output": [
+          "name": "VIA",
+          "uuid": "b11a17bd-322c-4f74-adde-2839236ec08f",
+          "position": {
+            "x": 429,
+            "y": 50
+          },
+          "_fnstr": "",
+          "input": [
+            {
+              "name": "Mesh",
+              "uuid": "c06038a8-176b-43b6-9c87-1524d51da643",
+              "_via": "b009a43f-709d-48e2-8bd1-527eedcac2f7"
+            }
+          ],
+          "output": [],
+          "nodes": [],
+          "connections": []
+        },
         {
-          "name": "Material",
-          "uuid": "0174bb58-cf8d-4484-8656-b61d286189ff"
+          "name": "Geometry",
+          "uuid": "51c574c7-f47f-43cf-aa27-94871e871560",
+          "position": {
+            "x": 163,
+            "y": 99
+          },
+          "_fnstr": "this.init = input => {\n  \n\n  this.geometry = new THREE.IcosahedronBufferGeometry(\n      300,\n      4\n  )\n\n}\n\nthis.process = input => {\n  return {\n    Geometry: this.geometry\n  }\n}\n\nthis.flush = () => {\n  if ( this.geometry )\n    this.geometry.dispose()\n  delete this.geometry\n}\n",
+          "input": [],
+          "output": [
+            {
+              "name": "Geometry",
+              "uuid": "6d69b216-e2ea-4a7d-8cb5-3d62bdbaf241"
+            }
+          ],
+          "nodes": [],
+          "connections": []
+        },
+        {
+          "name": "Mesh",
+          "uuid": "4d9dc0b4-44ba-4626-9087-b42b3be2d5a1",
+          "position": {
+            "x": 283,
+            "y": 50
+          },
+          "_fnstr": "this.init = input => {\n  setTimeout( () => {\n    this.mesh = new THREE.Mesh(\n      input.Geometry,\n      input.Material\n    )\n  }, 500 )\n}\n\nthis.process = input => {\n  return {\n    Mesh: this.mesh\n  }\n}\n\nthis.flush = () => {\n  if ( !this.mesh ) return\n    this.mesh.geometry.dispose()\n    this.mesh.material.dispose()\n  delete this.mesh\n}\n",
+          "input": [
+            {
+              "name": "Material",
+              "uuid": "1d14ce97-8ba8-4e0d-9a57-9c592b859331"
+            },
+            {
+              "name": "Geometry",
+              "uuid": "53fdc96c-5491-4483-8b19-7b42f2fe71c8"
+            }
+          ],
+          "output": [
+            {
+              "name": "Mesh",
+              "uuid": "89717ab8-b273-46d2-a24b-9a8c6a63a3d8"
+            }
+          ],
+          "nodes": [],
+          "connections": []
+        },
+        {
+          "name": "XPack-F15F",
+          "uuid": "f15f2e3f-1b42-4596-99ec-1ab2e70c1079",
+          "position": {
+            "x": 150,
+            "y": 50
+          },
+          "_fnstr": "",
+          "input": [],
+          "output": [
+            {
+              "name": "Material",
+              "uuid": "7b11dc19-fa1e-4fdd-bc90-15883d769b24",
+              "_via": "bb823c76-2906-4d1a-a0a0-f79424dbd590"
+            }
+          ],
+          "nodes": [
+            {
+              "name": "VIA",
+              "uuid": "9409da49-56fa-4e2a-a393-cd330da731e8",
+              "position": {
+                "x": 100,
+                "y": 247
+              },
+              "_fnstr": "",
+              "input": [],
+              "output": [],
+              "nodes": [],
+              "connections": []
+            },
+            {
+              "name": "VIA",
+              "uuid": "c881e4b9-f928-4ae7-b8e5-17458d3ac9f0",
+              "position": {
+                "x": 556,
+                "y": 247
+              },
+              "_fnstr": "",
+              "input": [
+                {
+                  "name": "Material",
+                  "uuid": "bb823c76-2906-4d1a-a0a0-f79424dbd590",
+                  "_via": "7b11dc19-fa1e-4fdd-bc90-15883d769b24"
+                }
+              ],
+              "output": [],
+              "nodes": [],
+              "connections": []
+            },
+            {
+              "name": "SHADER",
+              "uuid": "3542237a-77fb-4736-9e72-a7748ed5ff84",
+              "position": {
+                "x": 202,
+                "y": 247
+              },
+              "_fnstr": "this.init = () => {\n  this.shader = `\nvarying vec2 vUv;\nuniform float time;\nuniform float freq;\n\n#define PI 3.14159265\n\nfloat orenNayarDiffuse(\n  vec3 lightDirection,\n  vec3 viewDirection,\n  vec3 surfaceNormal,\n  float roughness,\n  float albedo) {\n  \n  float LdotV = dot(lightDirection, viewDirection);\n  float NdotL = dot(lightDirection, surfaceNormal);\n  float NdotV = dot(surfaceNormal, viewDirection);\n\n  float s = LdotV - NdotL * NdotV;\n  float t = mix(1.0, max(NdotL, NdotV), step(0.0, s));\n\n  float sigma2 = roughness * roughness;\n  float A = 1.0 + sigma2 * (albedo / (sigma2 + 0.13) + 0.5 / (sigma2 + 0.33));\n  float B = 0.45 * sigma2 / (sigma2 + 0.09);\n\n  return albedo * max(0.0, NdotL) * (A + B * s / t) / PI;\n}\n\nfloat gaussianSpecular(\n  vec3 lightDirection,\n  vec3 viewDirection,\n  vec3 surfaceNormal,\n  float shininess) {\n  vec3 H = normalize(lightDirection + viewDirection);\n  float theta = acos(dot(H, surfaceNormal));\n  float w = theta / shininess;\n  return exp(-w*w);\n}\n\nfloat fogFactorExp2(\n  const float dist,\n  const float density\n) {\n  const float LOG2 = -1.442695;\n  float d = density * dist;\n  return 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);\n}\n\n//\n// Description : Array and textureless GLSL 2D/3D/4D simplex\n//               noise functions.\n//      Author : Ian McEwan, Ashima Arts.\n//  Maintainer : ijm\n//     Lastmod : 20110822 (ijm)\n//     License : Copyright (C) 2011 Ashima Arts. All rights reserved.\n//               Distributed under the MIT License. See LICENSE file.\n//               https://github.com/ashima/webgl-noise\n//\n\nvec4 mod289(vec4 x) {\n  return x - floor(x * (1.0 / 289.0)) * 289.0; }\n\nfloat mod289(float x) {\n  return x - floor(x * (1.0 / 289.0)) * 289.0; }\n\nvec4 permute(vec4 x) {\n     return mod289(((x*34.0)+1.0)*x);\n}\n\nfloat permute(float x) {\n     return mod289(((x*34.0)+1.0)*x);\n}\n\nvec4 taylorInvSqrt(vec4 r)\n{\n  return 1.79284291400159 - 0.85373472095314 * r;\n}\n\nfloat taylorInvSqrt(float r)\n{\n  return 1.79284291400159 - 0.85373472095314 * r;\n}\n\nvec4 grad4(float j, vec4 ip)\n  {\n  const vec4 ones = vec4(1.0, 1.0, 1.0, -1.0);\n  vec4 p,s;\n\n  p.xyz = floor( fract (vec3(j) * ip.xyz) * 7.0) * ip.z - 1.0;\n  p.w = 1.5 - dot(abs(p.xyz), ones.xyz);\n  s = vec4(lessThan(p, vec4(0.0)));\n  p.xyz = p.xyz + (s.xyz*2.0 - 1.0) * s.www;\n\n  return p;\n  }\n\n// (sqrt(5) - 1)/4 = F4, used once below\n#define F4 0.309016994374947451\n\nfloat snoise(vec4 v)\n  {\n  const vec4  C = vec4( 0.138196601125011,  // (5 - sqrt(5))/20  G4\n                        0.276393202250021,  // 2 * G4\n                        0.414589803375032,  // 3 * G4\n                       -0.447213595499958); // -1 + 4 * G4\n\n// First corner\n  vec4 i  = floor(v + dot(v, vec4(F4)) );\n  vec4 x0 = v -   i + dot(i, C.xxxx);\n\n// Other corners\n\n// Rank sorting originally contributed by Bill Licea-Kane, AMD (formerly ATI)\n  vec4 i0;\n  vec3 isX = step( x0.yzw, x0.xxx );\n  vec3 isYZ = step( x0.zww, x0.yyz );\n//  i0.x = dot( isX, vec3( 1.0 ) );\n  i0.x = isX.x + isX.y + isX.z;\n  i0.yzw = 1.0 - isX;\n//  i0.y += dot( isYZ.xy, vec2( 1.0 ) );\n  i0.y += isYZ.x + isYZ.y;\n  i0.zw += 1.0 - isYZ.xy;\n  i0.z += isYZ.z;\n  i0.w += 1.0 - isYZ.z;\n\n  // i0 now contains the unique values 0,1,2,3 in each channel\n  vec4 i3 = clamp( i0, 0.0, 1.0 );\n  vec4 i2 = clamp( i0-1.0, 0.0, 1.0 );\n  vec4 i1 = clamp( i0-2.0, 0.0, 1.0 );\n\n  //  x0 = x0 - 0.0 + 0.0 * C.xxxx\n  //  x1 = x0 - i1  + 1.0 * C.xxxx\n  //  x2 = x0 - i2  + 2.0 * C.xxxx\n  //  x3 = x0 - i3  + 3.0 * C.xxxx\n  //  x4 = x0 - 1.0 + 4.0 * C.xxxx\n  vec4 x1 = x0 - i1 + C.xxxx;\n  vec4 x2 = x0 - i2 + C.yyyy;\n  vec4 x3 = x0 - i3 + C.zzzz;\n  vec4 x4 = x0 + C.wwww;\n\n// Permutations\n  i = mod289(i);\n  float j0 = permute( permute( permute( permute(i.w) + i.z) + i.y) + i.x);\n  vec4 j1 = permute( permute( permute( permute (\n             i.w + vec4(i1.w, i2.w, i3.w, 1.0 ))\n           + i.z + vec4(i1.z, i2.z, i3.z, 1.0 ))\n           + i.y + vec4(i1.y, i2.y, i3.y, 1.0 ))\n           + i.x + vec4(i1.x, i2.x, i3.x, 1.0 ));\n\n// Gradients: 7x7x6 points over a cube, mapped onto a 4-cross polytope\n// 7*7*6 = 294, which is close to the ring size 17*17 = 289.\n  vec4 ip = vec4(1.0/294.0, 1.0/49.0, 1.0/7.0, 0.0) ;\n\n  vec4 p0 = grad4(j0,   ip);\n  vec4 p1 = grad4(j1.x, ip);\n  vec4 p2 = grad4(j1.y, ip);\n  vec4 p3 = grad4(j1.z, ip);\n  vec4 p4 = grad4(j1.w, ip);\n\n// Normalise gradients\n  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n  p0 *= norm.x;\n  p1 *= norm.y;\n  p2 *= norm.z;\n  p3 *= norm.w;\n  p4 *= taylorInvSqrt(dot(p4,p4));\n\n// Mix contributions from the five corners\n  vec3 m0 = max(0.6 - vec3(dot(x0,x0), dot(x1,x1), dot(x2,x2)), 0.0);\n  vec2 m1 = max(0.6 - vec2(dot(x3,x3), dot(x4,x4)            ), 0.0);\n  m0 = m0 * m0;\n  m1 = m1 * m1;\n  return 49.0 * ( dot(m0*m0, vec3( dot( p0, x0 ), dot( p1, x1 ), dot( p2, x2 )))\n               + dot(m1*m1, vec2( dot( p3, x3 ), dot( p4, x4 ) ) ) ) ;\n\n}\n\n\n\nvoid main()\t{\n  vUv = uv;\n  float n = snoise( vec4( position * 0.005, time * 1.0 ) );\n\tvec3 normal = normalize( position ) * n * freq * 1000.0;\n  vec4 mvPosition = modelViewMatrix * vec4( position + normal, 1.0 );\n  gl_Position = projectionMatrix * mvPosition;\n}\n  `\n  \n}\n\nthis.process = () => {\n  return { VS: this.shader }\n}",
+              "input": [],
+              "output": [
+                {
+                  "name": "VS",
+                  "uuid": "8bd2e18a-01e8-4482-9e01-f8894b221b9d"
+                }
+              ],
+              "nodes": [],
+              "connections": []
+            },
+            {
+              "name": "SHADER",
+              "uuid": "a0a72fa1-75dc-49c7-855f-19c5115a5c5c",
+              "position": {
+                "x": 200,
+                "y": 304
+              },
+              "_fnstr": "this.init = () => {\n  this.shader = `\n\n\t\tvarying vec2 vUv;\n\t\tuniform float time;\n\t\tuniform float opacity;\n\t\tuniform vec3 color;\n\n    void main()\t{\n    \tgl_FragColor = vec4( color, opacity );\n    }\n\n  `\n  \n}\n\nthis.process = () => {\n  return { FS: this.shader }\n}",
+              "input": [],
+              "output": [
+                {
+                  "name": "FS",
+                  "uuid": "4fba1c56-58c3-42fb-8831-febbca4c25fb"
+                }
+              ],
+              "nodes": [],
+              "connections": []
+            },
+            {
+              "name": "SHADER MATERIAL",
+              "uuid": "e44ad26d-fc41-4393-9af8-bbfe1407d593",
+              "position": {
+                "x": 356,
+                "y": 268
+              },
+              "_fnstr": "this.init = input => {\n  this.uniforms = { \n    time: { value: 1.0 },\n  \tfreq: { value: 1.0 },\n    color: { value: new THREE.Color() },\n    opacity: { value: 1.0 },\n  }\n  this.material = new THREE.ShaderMaterial( { \n\t\tuniforms: this.uniforms,\n    vertexShader: input.VS,\n    fragmentShader: input.FS,\n    wireframe: true,\n    wireframeLinewidth: 1,\n    transparent: true,\n    blending: THREE.AdditiveBlending,\n  } )\n}\n\nthis.process = input => {\n  return {\n    Material: this.material\n  }\n}\n\nthis.flush = () => {\n  if ( this.material )\n    this.material.dispose()\n  delete this.material\n}\n",
+              "input": [
+                {
+                  "name": "VS",
+                  "uuid": "3337c08f-0efe-4f26-9ed8-e642852e632a"
+                },
+                {
+                  "name": "FS",
+                  "uuid": "5451002a-b9ba-4cb1-8fc6-17a11bee4d7c"
+                }
+              ],
+              "output": [
+                {
+                  "name": "Material",
+                  "uuid": "0174bb58-cf8d-4484-8656-b61d286189ff"
+                }
+              ],
+              "nodes": [],
+              "connections": []
+            }
+          ],
+          "connections": [
+            [
+              "0174bb58-cf8d-4484-8656-b61d286189ff",
+              "bb823c76-2906-4d1a-a0a0-f79424dbd590"
+            ],
+            [
+              "8bd2e18a-01e8-4482-9e01-f8894b221b9d",
+              "3337c08f-0efe-4f26-9ed8-e642852e632a"
+            ],
+            [
+              "4fba1c56-58c3-42fb-8831-febbca4c25fb",
+              "5451002a-b9ba-4cb1-8fc6-17a11bee4d7c"
+            ]
+          ]
         }
       ],
-      "nodes": [],
-      "connections": []
+      "connections": [
+        [
+          "89717ab8-b273-46d2-a24b-9a8c6a63a3d8",
+          "c06038a8-176b-43b6-9c87-1524d51da643"
+        ],
+        [
+          "7b11dc19-fa1e-4fdd-bc90-15883d769b24",
+          "1d14ce97-8ba8-4e0d-9a57-9c592b859331"
+        ],
+        [
+          "6d69b216-e2ea-4a7d-8cb5-3d62bdbaf241",
+          "53fdc96c-5491-4483-8b19-7b42f2fe71c8"
+        ]
+      ]
     }
   ],
   "connections": [
-    [
-      "6d69b216-e2ea-4a7d-8cb5-3d62bdbaf241",
-      "53fdc96c-5491-4483-8b19-7b42f2fe71c8"
-    ],
     [
       "dd3e35b0-337b-4218-a17b-d22d001151bc",
       "2291b24e-092b-4b17-a039-bafc20c35ff9"
@@ -571,14 +697,6 @@
     [
       "b8855666-0218-47e6-be76-a022ba3bc1d2",
       "390cb6c1-bfd9-4e24-a0ed-006eb8e91b50"
-    ],
-    [
-      "e5e379b8-d8c8-447c-9f14-747d35e81697",
-      "5aa1061d-bda1-478e-ad30-125242d87db9"
-    ],
-    [
-      "79fbc674-8f2b-4a98-9c96-c2434889c28c",
-      "61925410-6259-439c-b7cf-711302d07bb5"
     ],
     [
       "409e1180-5ed1-4a20-98d7-4e2e082e6ead",
@@ -589,28 +707,24 @@
       "f0d007d6-6c2f-4c02-beb4-da3434d83696"
     ],
     [
-      "8bd2e18a-01e8-4482-9e01-f8894b221b9d",
-      "3337c08f-0efe-4f26-9ed8-e642852e632a"
-    ],
-    [
-      "4fba1c56-58c3-42fb-8831-febbca4c25fb",
-      "5451002a-b9ba-4cb1-8fc6-17a11bee4d7c"
-    ],
-    [
-      "0174bb58-cf8d-4484-8656-b61d286189ff",
-      "1d14ce97-8ba8-4e0d-9a57-9c592b859331"
-    ],
-    [
       "7a9e0de0-9b74-42ec-9e5c-db6a411958b1",
       "1aba94c5-86ee-4285-91b9-30d2a896c6fd"
     ],
     [
-      "89717ab8-b273-46d2-a24b-9a8c6a63a3d8",
-      "5931e3cb-aebc-44a0-8d9e-8123cfe39f6b"
-    ],
-    [
       "b2edd98a-99c1-44c9-8776-4a9632de398b",
       "a83236f8-1672-4fe2-a275-bdc20172a973"
+    ],
+    [
+      "e5e379b8-d8c8-447c-9f14-747d35e81697",
+      "ef08f013-45e4-484b-a593-445ad6766b88"
+    ],
+    [
+      "06353fc3-8074-45a0-91c0-359c228f1ef3",
+      "61925410-6259-439c-b7cf-711302d07bb5"
+    ],
+    [
+      "b009a43f-709d-48e2-8bd1-527eedcac2f7",
+      "5931e3cb-aebc-44a0-8d9e-8123cfe39f6b"
     ]
   ]
 }

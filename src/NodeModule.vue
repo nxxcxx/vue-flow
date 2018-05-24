@@ -55,7 +55,7 @@ export default {
 		},
 		autoResizeTitleInput() {
 			let titleInput = $( this.$refs.titleInput )
-			titleInput.width( Math.max( 10, titleInput.val().length * 7 ) )
+			titleInput.width( Math.max( 10, titleInput.val().length * 6.5 ) )
 		},
 		setSelecting() {
 			this.node._selecting = true
@@ -193,7 +193,7 @@ export default {
 	.awatingInputData
 		border: 1px solid #f9b80b
 	input
-		padding: 0px
+		padding: 0px 4px
 		border: none
 		height: 13px
 		background: rgb(42, 42, 42)
