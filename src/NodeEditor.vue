@@ -6,7 +6,9 @@
 
 <script>
 import CodeMirror from 'codemirror'
+import 'root/node_modules/codemirror/addon/edit/closebrackets.js'
 import 'root/node_modules/codemirror/mode/javascript/javascript.js'
+import 'root/node_modules/codemirror/mode/glsl/glsl.js'
 import 'root/node_modules/codemirror/keymap/vim.js'
 import 'root/node_modules/codemirror/lib/codemirror.css'
 import 'root/node_modules/codemirror/theme/material.css'
@@ -20,11 +22,12 @@ export default {
 	},
 	mounted() {
 		let cm = CodeMirror.fromTextArea( this.$refs.editor, {
-			mode: 'javascript',
+			mode: 'glsl',
 			keyMap: 'vim',
 			theme: 'material',
 			lineNumbers: true,
-			tabSize: 2
+			autoCloseBrackets: true,
+			tabSize: 2,
 		} )
 		cm.constructor.Vim.map( 'jj', '<Esc>', 'insert' )
 		cm.setSize( '100%', 500 )

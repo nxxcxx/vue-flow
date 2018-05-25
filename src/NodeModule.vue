@@ -73,6 +73,9 @@ export default {
 		moveByUnit( dx, dy ) {
 			let zf = this.$parent.vpd.zoomFactor
 			, [ x, y ] = [ ( this.prevPos.left + dx ) / zf, ( this.prevPos.top + dy ) / zf ]
+			// test snapping
+			// x = 5 * Math.round( x / 5 )
+			// y = 5 * Math.round( y / 5 )
 			this.setPosition( x, y )
 		},
 		updateDimension() {

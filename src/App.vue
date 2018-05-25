@@ -27,6 +27,9 @@
 			</div>
 
 		</div>
+
+		<div style="width: 50px; height: 100%; background: red;"></div>
+
 		<div ref="rightView" id="right">
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
 				<NodeGraph :graph="graph"></NodeGraph>

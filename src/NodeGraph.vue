@@ -439,7 +439,7 @@ export default {
 				mx = Math.min( mx, n.position.x )
 				my = Math.min( my, n.position.y )
 			} )
-			let offset = 50
+			let offset = 0
 			graph.nodes.forEach( n => {
 				this.$EventBus.$emit( 'update-node-position', {
 					node: n,
@@ -459,20 +459,16 @@ export default {
 			let [ minY, maxY ] = [ Infinity, - Infinity ]
 			this.graphView.nodes.forEach( n => {
 				minX = Math.min( minX, n.position.x )
-				maxX = Math.max( maxX, n.position.x )
+				maxX = Math.max( maxX, n.position.x + n._dimension.w )
 				minY = Math.min( minY, n.position.y )
-				maxY = Math.max( maxY, n.position.y )
+				maxY = Math.max( maxY, n.position.y + n._dimension.h )
 			} )
-			let dimension = { w: maxX - minX, h: maxY - minY }
-			let vp = $( this.$refs.nodeGraphRoot )
-			let vpDimension = { w: vp.width() - 150, h: vp.height() - 150 }
-			let size = Math.max( dimension.w, dimension.h )
-			let vpSize = Math.max( vpDimension.w, vpDimension.h )
-			if ( dimension.w < dimension.h )
-				vpSize = Math.min( vpDimension.w, vpDimension.h )
-			let scaleFactor = Math.min( 1.0, vpSize / size )
+			let gDim = { w: maxX - minX, h: maxY - minY }
+			let v = $( this.$refs.nodeGraphRoot )
+			let vDim = { w: v.width() * 0.95, h: v.height() * 0.95 }
+			let scaleFactor = Math.min( 1.0, Math.min( vDim.w / gDim.w, vDim.h / gDim.h ) )
 			this.setZoomFactor( scaleFactor )
-			$( this.$refs.nodeGraphRoot ).scrollLeft( minX * scaleFactor - 20 ).scrollTop( minY * scaleFactor - 20 )
+			this.pan( 25 * scaleFactor, 25 * scaleFactor )
 		},
 	},
 	created() {
@@ -630,8 +626,8 @@ export default {
 					this.selectedNodes.length > 0 &&
 					this.movingNode &&
 					!this.draggingLabel &&
-					!this.ioConnecting &&
-					!this.nodeTitleMouseOver
+					!this.ioConnecting
+					// && !this.nodeTitleMouseOver
 				) {
 					this.selectedNodes.forEach( n => {
 						this.$EventBus.$emit( 'node-move', {
