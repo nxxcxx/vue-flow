@@ -2,7 +2,7 @@
 	<div style="user-select: none;">
 		<div @click="toggleExpandTree" :style="{ 'margin-left': `${indent}px` }">
 			<!-- <div>{{ depth !== 0 ? `└${expand ? '─' : '+'}` : '' }} {{ xpack.name }}</div> -->
-			<div>{{ depth !== 0 ? `${expand ? '-' : '+'}` : '' }} {{ xpack.name }}</div>
+			<div>{{ depth !== 0 ? `${expand ? '└' : '+'}` : '' }} {{ depth === 0 ? 'ROOT' : '' }} {{ xpack.name }}</div>
 		</div>
 		<TreeView
 			v-show="expand"

@@ -22,7 +22,7 @@
 
 			<NodeEditor></NodeEditor>
 
-			<div style="font-size: 0.9em; padding: 5px; background: rgba(200, 200, 200, 0.025);">
+			<div style="padding: 6px;">
 				<TreeView :xpack="graph" :depth="0"></TreeView>
 			</div>
 
@@ -340,6 +340,7 @@ export default {
 		height: 100%
 		z-index: 10
 	#right
+		position: relative
 		height: 100%
 	::-webkit-scrollbar
 		background: $dz
