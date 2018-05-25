@@ -1,8 +1,8 @@
 <template>
 	<div id="app">
 
-
-		<div id="left">
+		<main ref="main" class="grid">
+		<div ref="leftView" id="left">
 
 			<div style="background: black; width: 100%; height: 14px">
 				<div class="btn" @click="parseSelectedNodes">[PSEL]</div>
@@ -28,7 +28,7 @@
 
 		</div>
 
-		<div style="width: 50px; height: 100%; background: red;"></div>
+		<div ref="gridSeparator" class="gridResizer"></div>
 
 		<div ref="rightView" id="right">
 			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
@@ -44,6 +44,7 @@
 			</canvas>
 
 		</div>
+		</main>
 	</div>
 </template>
 
@@ -263,6 +264,25 @@ export default {
 		this.importGraph()
 	},
 	mounted() {
+
+		let resizingGrid = false
+		$( this.$refs.gridSeparator )
+		.on( 'mousedown', ev => {
+			resizingGrid = true
+		} )
+		$( window )
+		.on( 'mouseup', ev => {
+			resizingGrid = false
+		} )
+		.on( 'mousemove', ev => {
+			if ( resizingGrid ) {
+				let grid = $( this.$refs.main )
+				let xCoordPercent = ev.clientX / grid.width() * 100
+				console.log( xCoordPercent )
+				grid.css( 'grid-template-columns', `${xCoordPercent}% 5px auto` )
+			}
+		} )
+
 		this.initTHREE()
 		this.$root.$on( 'node-selected', nodes => {
 			this.selectedNodes = nodes
@@ -305,18 +325,22 @@ export default {
 		font-size: 12px
 	svg
 		overflow: visible
-	#left
-		position: absolute
-		width: 30%
+	#app
 		height: 100%
-		border-right: 2px solid $dz
+		draggable: false
+	.grid
+		display: grid
+		height: 100%
+		grid-template-columns: 30% 5px auto
+		draggable: false
+	.gridResizer
+		background: black
+		cursor: e-resize
+	#left
+		height: 100%
 		z-index: 10
 	#right
-		position: absolute
-		width: 70%
 		height: 100%
-		left: 30%
-		// box-shadow: inset 3px 0px #008cff
 	::-webkit-scrollbar
 		background: $dz
 		border-right: 1px solid $w1

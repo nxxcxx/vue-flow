@@ -1,22 +1,22 @@
 <template>
 	<div ref="viewport" class="viewport">
 
-		<div style="width: calc(100% - 15px); position: absolute; padding: 0px 4px; z-index: 20; background: rgb(0, 0, 0); user-select: none;">
-			<nav style="display: inline-block; cursor: pointer;">
-				<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
-					<span @click="viewXPack( path.node )">{{ path.name }}</span>
-					<span v-if="idx !== graphViewPath.length - 1"> > </span>
-				</span>
-
-			</nav>
-			<div class="btn" @click="unpackSelectedNode">[UNPACK]</div>
-			<div class="btn" @click="packSelectedNodes">[PACK]</div>
-			<div class="btn"  @click="normalizeView( graphView )">[RESET_VIEW]</div>
-			<div class="btn" @click="centerGraphInView">[CENTER_VIEW]</div>
-			<!-- <div class="btn" @click="sort">[SORT]</div> -->
-		</div>
-
 		<div ref="nodeGraphRoot" class="nodeGraphRoot">
+
+			<div style="width: 100%; position: absolute; padding: 0px 4px; z-index: 20; background: rgb(0, 0, 0); user-select: none;">
+				<nav style="display: inline-block; cursor: pointer;">
+					<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
+						<span @click="viewXPack( path.node )">{{ path.name }}</span>
+						<span v-if="idx !== graphViewPath.length - 1"> > </span>
+					</span>
+
+				</nav>
+				<div class="btn" @click="unpackSelectedNode">[UNPACK]</div>
+				<div class="btn" @click="packSelectedNodes">[PACK]</div>
+				<div class="btn"  @click="normalizeView( graphView )">[RESET_VIEW]</div>
+				<div class="btn" @click="centerGraphInView">[CENTER_VIEW]</div>
+				<!-- <div class="btn" @click="sort">[SORT]</div> -->
+			</div>
 
 			<div ref="nodeGraphContainer" class="nodeGraphContainer">
 
