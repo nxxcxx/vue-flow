@@ -277,9 +277,11 @@ export default {
 		.on( 'mousemove', ev => {
 			if ( resizingGrid ) {
 				let grid = $( this.$refs.main )
-				let xCoordPercent = ev.clientX / grid.width() * 100
-				console.log( xCoordPercent )
+				let xCoordPercent = Math.min( Math.max( 0, ev.clientX / grid.width() * 100 ), 100 )
 				grid.css( 'grid-template-columns', `${xCoordPercent}% 5px auto` )
+				let cv = $( this.$refs.canvas )
+				cv.css( 'width', '100%' )
+				$( window ).trigger( 'resize' )
 			}
 		} )
 
