@@ -167,7 +167,6 @@ export default {
 	$s0: #0bb1f9
 	.nodeModule
 		position: absolute
-		padding: 4px 0px 4px 0px
 		background: $d0
 		pointer-events: auto
 		box-sizing: border-box
@@ -180,18 +179,17 @@ export default {
 			border: 1px solid $b0
 			z-index: 5
 	.title
-		padding: 0px 4px 2px 4px
+		height: 15px
+
 	.ioContainer
 		display: flex
 		justify-content: space-between
 	.separator
-		width: 16px
+		width: 15px
 		display: inline-block
 	.inputColumn
-		padding: 0px
 		display: inline-block
 	.outputColumn
-		padding: 0px
 		display: inline-block
 	.awatingInputData
 		border: 1px solid #f9b80b

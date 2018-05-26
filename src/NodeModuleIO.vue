@@ -133,6 +133,7 @@ export default {
 
 	.ioRow
 		display: flex
+		height: 15px
 
 	.ioPort
 		width: 5px

@@ -3,7 +3,7 @@
 
 		<div ref="nodeGraphRoot" class="nodeGraphRoot">
 
-			<div style="width: 100%; position: absolute; padding: 0px 4px; z-index: 20; background: rgb(0, 0, 0); user-select: none;">
+			<div style="width: 100%; position: absolute; padding: 0px 4px; z-index: 20; background: #0a0a0a; user-select: none;">
 				<nav style="display: inline-block; cursor: pointer;">
 					<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
 						<span @click="viewXPack( path.node )">{{ path.name }}</span>

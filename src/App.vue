@@ -4,7 +4,7 @@
 		<main ref="main" class="grid">
 		<div ref="leftView" id="left">
 
-			<div style="background: black; width: 100%; height: 14px">
+			<div style="background: #0a0a0a; width: 100%; height: 14px">
 				<div class="btn" @click="parseSelectedNodes">[PSEL]</div>
 				<div class="btn" @click="flushSelectedNodes">[FSEL]</div>
 				<div class="btn" @click="parse">[PARSE]</div>
@@ -336,7 +336,7 @@ export default {
 		grid-template-columns: 30% 5px auto
 		draggable: false
 	.gridResizer
-		background: black
+		background: #0a0a0a
 		cursor: e-resize
 	#left
 		height: 100%
