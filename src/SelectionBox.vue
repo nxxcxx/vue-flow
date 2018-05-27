@@ -1,10 +1,8 @@
-<template>
-	<div id="selectionBox"
-	v-show="active"
-	:style="{
-		width: width + 'px', height: height + 'px',
-		top: top + 'px', left: left + 'px' }">
-	</div>
+<template lang="pug">
+	div#selectionBox(
+		v-show='active'
+		:style="{ width: `${width}px`, height: `${height}px`, top: `${top}px`, left: `${left}px` }"
+	)
 </template>
 
 <script>

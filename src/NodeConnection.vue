@@ -1,22 +1,21 @@
-<template>
-	<g>
-		<path
-			@dblclick="disconnect"
-			@mouseenter="onMouseEnter"
-			@mouseleave="onMouseLeave"
-			class="connectionGhost"
-			:d="getBezierCurveString()"
-			stroke-width="6.0"
-			fill="rgba(0,0,0,0)"
-		/>
-		<path
-			class="connection"
-			:d="getBezierCurveString()"
-			:stroke="hover ? '#0bb1f9' : '#e6e6e6'"
-			stroke-width="1.0"
-			fill="rgba(0,0,0,0)"
-		/>
-	</g>
+<template lang="pug">
+	g
+		path(
+			@dblclick='disconnect'
+			@mouseenter='onMouseEnter'
+			@mouseleave='onMouseLeave'
+			class='connectionGhost'
+			:d='getBezierCurveString()'
+			stroke-width='6.0'
+			fill='rgba(0,0,0,0)'
+		)
+		path(
+			class='connection'
+			:d='getBezierCurveString()'
+			:stroke='hover ? "#0bb1f9" : "#e6e6e6"'
+			stroke-width='1.0'
+			fill='rgba(0,0,0,0)'
+		)
 </template>
 
 <script>

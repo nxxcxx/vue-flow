@@ -1,6 +1,6 @@
 <template lang="pug">
 	div.viewport( ref='viewport' )
-		div( style='position: absolute; width: 100%; height: 15px; background: black; z-index: 10;' )
+		div( style='width: 100%; height: 15px; background: black; z-index: 10;' )
 			span( v-for='( node, idx ) in graphViewPath' @click='viewXPack( node.node )' style='cursor: default;' )
 				span( style='cursor: pointer;' ) {{ node.name }}
 				span {{ idx === graphViewPath.length - 1 ? '' : ' > ' }}
