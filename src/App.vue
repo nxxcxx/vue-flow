@@ -21,8 +21,6 @@
 					NodeGraph( :graph='graph' )
 				div( style='position: relative; height: 50%' )
 					NodeGraph( :graph='graph' )
-				div.minimap
-					NodeGraph( :graph='graph' )
 				canvas#canvas( ref='canvas' )
 </template>
 
@@ -340,12 +338,5 @@ export default {
 		left: 0px
 		transform-style: preserve-3d
 		z-index: 100
-	.minimap
-		position: absolute
-		width: 200px
-		height: 100px
-		top: 0px
-		right: 0px
-		background: rgba(0, 0, 0, 0.85)
 
 </style>

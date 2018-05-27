@@ -1,5 +1,12 @@
 <template lang="pug">
 	div.viewport( ref='viewport' )
+		div( style='position: absolute; width: 100%; height: 15px; background: black; z-index: 10;' )
+			span( v-for='( node, idx ) in graphViewPath' @click='viewXPack( node.node )' style='cursor: default;' )
+				span( style='cursor: pointer;' ) {{ node.name }}
+				span {{ idx === graphViewPath.length - 1 ? '' : ' > ' }}
+			span.btn( @click='centerGraphInView' ) CENTER_VIEW
+			span.btn( @click='packSelectedNodes' ) PACK
+			span.btn( @click='unpackSelectedNode' ) UNPACK
 		div.nodeGraphRoot( ref='nodeGraphRoot' )
 			div.nodeGraphContainer( ref='nodeGraphContainer' )
 				svg.nodeContainerSvg
@@ -79,7 +86,7 @@ export default {
 				n.parent = this.graph
 				this.graph.nodes.push( n )
 			}
-			this.centerGraphInView()
+
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
@@ -433,21 +440,23 @@ export default {
 			$( this.$refs.nodeGraphRoot ).scrollLeft( 0 ).scrollTop( 0 )
 		},
 		centerGraphInView() {
-			this.normalizeView( this.graphView )
-			let [ minX, maxX ] = [ Infinity, - Infinity ]
-			let [ minY, maxY ] = [ Infinity, - Infinity ]
-			this.graphView.nodes.forEach( n => {
-				minX = Math.min( minX, n.position.x )
-				maxX = Math.max( maxX, n.position.x + n._dimension.w )
-				minY = Math.min( minY, n.position.y )
-				maxY = Math.max( maxY, n.position.y + n._dimension.h )
+			this.$nextTick( () => {
+				this.normalizeView( this.graphView )
+				let [ minX, maxX ] = [ Infinity, - Infinity ]
+				let [ minY, maxY ] = [ Infinity, - Infinity ]
+				this.graphView.nodes.forEach( n => {
+					minX = Math.min( minX, n.position.x )
+					maxX = Math.max( maxX, n.position.x + n._dimension.w )
+					minY = Math.min( minY, n.position.y )
+					maxY = Math.max( maxY, n.position.y + n._dimension.h )
+				} )
+				let gDim = { w: maxX - minX, h: maxY - minY }
+				let v = $( this.$refs.nodeGraphRoot )
+				let vDim = { w: v.width() * 0.95, h: v.height() * 0.95 }
+				let scaleFactor = Math.min( 1.0, Math.min( vDim.w / gDim.w, vDim.h / gDim.h ) )
+				this.setZoomFactor( scaleFactor )
+				this.pan( 25 * scaleFactor, 25 * scaleFactor )
 			} )
-			let gDim = { w: maxX - minX, h: maxY - minY }
-			let v = $( this.$refs.nodeGraphRoot )
-			let vDim = { w: v.width() * 0.95, h: v.height() * 0.95 }
-			let scaleFactor = Math.min( 1.0, Math.min( vDim.w / gDim.w, vDim.h / gDim.h ) )
-			this.setZoomFactor( scaleFactor )
-			this.pan( 25 * scaleFactor, 25 * scaleFactor )
 		},
 	},
 	created() {
