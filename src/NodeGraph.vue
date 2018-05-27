@@ -1,44 +1,22 @@
-<template>
-	<div ref="viewport" class="viewport">
-
-		<div ref="nodeGraphRoot" class="nodeGraphRoot">
-
-			<div style="width: 100%; position: absolute; padding: 0px 4px; z-index: 20; background: #0a0a0a; user-select: none;">
-				<nav style="display: inline-block; cursor: pointer;">
-					<span v-for="( path, idx ) in graphViewPath" :key="path.node.uuid">
-						<span @click="viewXPack( path.node )">{{ path.name }}</span>
-						<span v-if="idx !== graphViewPath.length - 1"> > </span>
-					</span>
-
-				</nav>
-				<div class="btn" @click="unpackSelectedNode">[UNPACK]</div>
-				<div class="btn" @click="packSelectedNodes">[PACK]</div>
-				<div class="btn"  @click="normalizeView( graphView )">[RESET_VIEW]</div>
-				<div class="btn" @click="centerGraphInView">[CENTER_VIEW]</div>
-				<!-- <div class="btn" @click="sort">[SORT]</div> -->
-			</div>
-
-			<div ref="nodeGraphContainer" class="nodeGraphContainer">
-
-				<svg class="nodeContainerSvg">
-					<NodeGhostConnection></NodeGhostConnection>
-					<NodeConnection v-for="conn in graphView.connections" :key="conn[ 0 ].uuid + conn[ 1 ].uuid" :conn="conn"></NodeConnection>
-				</svg>
-
-				<div class="nodeContainer">
-					<NodeModule v-for="node in graphView.nodes" :key="node.uuid"
-						:node="node"
-						:selected="isNodeSelected( node )"
-					></NodeModule>
-				</div>
-
-			</div>
-
-		</div>
-
-		<SelectionBox></SelectionBox>
-
-	</div>
+<template lang="pug">
+	div.viewport( ref='viewport' )
+		div.nodeGraphRoot( ref='nodeGraphRoot' )
+			div.nodeGraphContainer( ref='nodeGraphContainer' )
+				svg.nodeContainerSvg
+					NodeGhostConnection
+					NodeConnection(
+						v-for='conn in graphView.connections'
+						:key='conn[ 0 ].uuid + conn[ 1 ].uuid'
+						:conn='conn'
+					)
+				div.nodeContainer
+					NodeModule(
+						v-for='node in graphView.nodes'
+						:key='node.uuid' :node='node'
+						:selected='isNodeSelected( node )'
+					)
+		SelectionBox
+		ContextMenu
 </template>
 
 <script>
@@ -48,13 +26,14 @@ import NodeModule from './NodeModule.vue'
 import NodeConnection from './NodeConnection.vue'
 import NodeGhostConnection from './NodeGhostConnection.vue'
 import SelectionBox from './SelectionBox.vue'
+import ContextMenu from './ContextMenu.vue'
 import toposort from 'toposort'
 import { XPack, RouterNode } from './xpack.js'
 import nodeFactory from './NodeFactory.js'
 
 export default {
 	name: 'NodeGraph',
-	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection },
+	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection, ContextMenu },
 	props: [ 'graph' ],
 	provide() {
 		return {
@@ -100,7 +79,7 @@ export default {
 				n.parent = this.graph
 				this.graph.nodes.push( n )
 			}
-
+			this.centerGraphInView()
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
@@ -659,8 +638,6 @@ export default {
 		background-position: 13px 42px
 	.nodeGraphContainer
 		background-color: transparent
-		// background-image: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, .05) 75%, rgba(255, 255, 255, .05) 76%, transparent 77%, transparent)
-		background-size: 50px 50px
 		overflow: visible
 		pointer-events: none
 		position: absolute

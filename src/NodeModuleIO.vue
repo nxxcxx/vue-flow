@@ -1,19 +1,16 @@
-<template>
-	<div class="ioRow" :class="{ inputRow: isInput(), outputRow: isOutput() }">
-		<div ref="ioPort" class="ioPort"
-			:class="{ inputPort: isInput(), outputPort: isOutput(),
-				connected: !io.free && !selected, selected, hover
-			}"
-		>
-		</div>
-		<div ref="ioLabel" class="ioLabel" :class="{ inputLabel: isInput(), outputLabel: isOutput() }"
-			@click="debug()"
-			@dblclick="editLabel()"
-		>
-			<span v-show="!editingLabel">{{ io.name || 'null' }}</span>
-			<span v-show="editingLabel"><input ref="inputLabel" @input="autoResizeLabel" class="labelInput" type="text" v-model="io.name" spellcheck="false"></span>
-		</div>
-	</div>
+<template lang="pug">
+	div.ioRow( :class='{ inputRow: isInput(), outputRow: isOutput() }' )
+		div.ioPort( ref='ioPort' :class='{ inputPort: isInput(), outputPort: isOutput(), connected: !io.free && !selected, selected, hover }' )
+		div.ioLabel( ref='ioLabel' :class='{ inputLabel: isInput(), outputLabel: isOutput() }'
+			@click='debug()'
+			@dblclick='editLabel()'
+		)
+			span( v-show='!editingLabel' ) {{ io.name || 'null' }}
+			span( v-show='editingLabel' )
+				input.labelInput( ref='inputLabel' type='text'  spellcheck='false'
+					v-model='io.name'
+					@input='autoResizeLabel'
+				)
 </template>
 
 <script>

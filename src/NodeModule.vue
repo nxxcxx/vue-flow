@@ -1,26 +1,24 @@
-<template>
-	<div ref="nodeModule" class="nodeModule"
-		:style="{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }"
-		:class="{ selected, tmpSelected: node._selecting, awatingInputData: !node._receivedAllOputput }"
-	>
-		<div class="title" @mouseenter="mouseenterTitle()" @mouseleave="mouseleaveTitle()" @dblclick="editTitle()">
-			<span v-show="!editingTitle">{{ node.name || 'null' }}</span>
-			<span v-show="editingTitle"><input ref="titleInput" @input="autoResizeTitleInput" class="titleInput" type="text" v-model="node.name" spellcheck="false"></span>
-			&nbsp;<span style="float: right;">[{{ node.order }}]</span>
-		</div>
-		<div class="ioContainer">
-			<div class="inputColumn">
-				<NodeModuleIO v-for="input of node.input" :key="input.uuid" :io="input"></NodeModuleIO>
-			</div>
-
-			<div class="separator"></div>
-
-			<div class="outputColumn">
-				<NodeModuleIO v-for="output of node.output" :key="output.uuid" :io="output"></NodeModuleIO>
-			</div>
-		</div>
-
-	</div>
+<template lang="pug">
+	div.nodeModule( ref='nodeModule'
+		:style='{ transform: `matrix(1,0,0,1,${node.position.x},${node.position.y})` }'
+		:class='{ selected, tmpSelected: node._selecting, awatingInputData: !node._receivedAllOputput }'
+	)
+		div.title( @mouseenter='mouseenterTitle()'
+			@mouseleave='mouseleaveTitle()'
+			@dblclick='editTitle()'
+		)
+			span( v-show='!editingTitle' ) {{ node.name || 'null' }}
+			span( v-show='editingTitle' )
+				input.titleInput( ref='titleInput' type='text' spellcheck='false'
+					v-model='node.name'
+					@input='autoResizeTitleInput'
+				)
+		div.ioContainer
+			div.inputColumn
+				NodeModuleIO( v-for='input of node.input' :key='input.uuid' :io='input' )
+			div.separator
+			div.outputColumn
+				NodeModuleIO( v-for='output of node.output' :key='output.uuid' :io='output' )
 </template>
 
 <script>

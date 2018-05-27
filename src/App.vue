@@ -1,51 +1,29 @@
-<template>
-	<div id="app">
-
-		<main ref="main" class="grid">
-		<div ref="leftView" id="left">
-
-			<div style="background: #0a0a0a; width: 100%; height: 14px">
-				<div class="btn" @click="parseSelectedNodes">[PSEL]</div>
-				<div class="btn" @click="flushSelectedNodes">[FSEL]</div>
-				<div class="btn" @click="parse">[PARSE]</div>
-				<div class="btn" @click="step">[STEP]</div>
-				<div class="btn" @click="loopStop">[STOP]</div>
-				<div class="btn" @click="loopStart">[START]</div>
-			</div>
-
-			<div v-if="selectedNodes.length === 1">
-				[{{ selectedNodes[ 0 ].name }}] {{ selectedNodes[ 0 ].uuid.toUpperCase() }}
-			</div>
-			<div v-if="selectedNodes.length !== 1">
-				[]
-			</div>
-
-			<NodeEditor></NodeEditor>
-
-			<div style="padding: 6px;">
-				<TreeView :xpack="graph" :depth="0"></TreeView>
-			</div>
-
-		</div>
-
-		<div ref="gridSeparator" class="gridResizer"></div>
-
-		<div ref="rightView" id="right">
-			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
-				<NodeGraph :graph="graph"></NodeGraph>
-			</div>
-			<div style="position: relative; width: 100%; height: 50%; top: 0px; left: 0px">
-				<NodeGraph :graph="graph"></NodeGraph>
-			</div>
-
-			<canvas
-				ref="canvas" id="canvas"
-				style="pointer-events: none; width: 100%; height: 100%; position: absolute; top: 0px; left: 0px; transform-style: preserve-3d; z-index: 100;">
-			</canvas>
-
-		</div>
-		</main>
-	</div>
+<template lang="pug">
+	div#app
+		main.grid( ref='main' )
+			div#left( ref='leftView' )
+				div( style='background: #0a0a0a; width: 100%; height: 14px' )
+					div.btn( @click='parseSelectedNodes' ) [PSEL]
+					div.btn( @click='flushSelectedNodes' ) [FSEL]
+					div.btn( @click='parse' ) [PARSE]
+					div.btn( @click='step' ) [STEP]
+					div.btn( @click='loopStop' ) [STOP]
+					div.btn( @click='loopStart' ) [START]
+				div( v-if='selectedNodes.length === 1' ).
+					[{{ selectedNodes[ 0 ].name }}] {{ selectedNodes[ 0 ].uuid.toUpperCase() }}
+				div( v-if='selectedNodes.length !== 1' ).
+					[]
+				NodeEditor
+				TreeView( :xpack='graph' :depth='0' )
+			div.gridResizer( ref='gridSeparator' )
+			div#right( ref='rightView' )
+				div( style='position: relative; height: 50%' )
+					NodeGraph( :graph='graph' )
+				div( style='position: relative; height: 50%' )
+					NodeGraph( :graph='graph' )
+				div.minimap
+					NodeGraph( :graph='graph' )
+				canvas#canvas( ref='canvas' )
 </template>
 
 <script>
@@ -58,9 +36,7 @@ import nodeFactory from './NodeFactory.js'
 export default {
 	name: 'app',
 	components: {
-		NodeGraph,
-		NodeEditor,
-		TreeView
+		NodeGraph, NodeEditor, TreeView
 	},
 	data() {
 		return {
@@ -327,6 +303,17 @@ export default {
 		font-size: 12px
 	svg
 		overflow: visible
+	::-webkit-scrollbar
+		background: $dz
+		border-right: 1px solid $w1
+		width: 5px
+		height: 5px
+	::-webkit-scrollbar-track
+		background: $dz
+	::-webkit-scrollbar-thumb
+		background: $w1
+	::-webkit-scrollbar-thumb:active
+		background: $g0
 	#app
 		height: 100%
 		draggable: false
@@ -344,15 +331,21 @@ export default {
 	#right
 		position: relative
 		height: 100%
-	::-webkit-scrollbar
-		background: $dz
-		border-right: 1px solid $w1
-		width: 5px
-		height: 5px
-	::-webkit-scrollbar-track
-		background: $dz
-	::-webkit-scrollbar-thumb
-		background: $w1
-	::-webkit-scrollbar-thumb:active
-		background: $g0
+	#canvas
+		pointer-events: none
+		width: 100%
+		height: 100%
+		position: absolute
+		top: 0px
+		left: 0px
+		transform-style: preserve-3d
+		z-index: 100
+	.minimap
+		position: absolute
+		width: 200px
+		height: 100px
+		top: 0px
+		right: 0px
+		background: rgba(0, 0, 0, 0.85)
+
 </style>

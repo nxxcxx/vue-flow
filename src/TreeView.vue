@@ -1,19 +1,8 @@
-<template>
-	<div style="user-select: none;">
-		<div @click="toggleExpandTree" :style="{ 'margin-left': `${indent}px` }">
-			<!-- <div>{{ depth !== 0 ? `└${expand ? '─' : '+'}` : '' }} {{ xpack.name }}</div> -->
-			<div>{{ depth !== 0 ? `${expand ? '└' : '+'}` : '' }} {{ depth === 0 ? 'ROOT' : '' }} {{ xpack.name }}</div>
-		</div>
-		<TreeView
-			v-show="expand"
-			v-for="xp in xpack.nodes"
-			v-if="shouldRender( xp )"
-			:key="xp.uuid"
-			:xpack="xp"
-			:depth="depth + 1"
-		>
-		</TreeView>
-	</div>
+<template lang="pug">
+	div( style='user-select: none' )
+		div( @click='toggleExpandTree' :style="{ 'margin-left': `${indent}px` }" )
+			div {{ depth !== 0 ? `${expand ? '└' : '+'}` : ''  }} {{ depth === 0 ? 'ROOT' : '' }} {{ xpack.name }}
+		TreeView( v-show='expand' v-for='xp in xpack.nodes' v-if='shouldRender( xp )' :key='xp.uuid' :xpack='xp' :depth='depth + 1' )
 </template>
 
 <script>

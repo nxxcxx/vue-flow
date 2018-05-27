@@ -22,7 +22,7 @@ export default {
 	},
 	mounted() {
 		let cm = CodeMirror.fromTextArea( this.$refs.editor, {
-			mode: 'glsl',
+			mode: 'javascript',
 			keyMap: 'vim',
 			theme: 'material',
 			lineNumbers: true,

@@ -1,9 +1,9 @@
-<template>
-	<line ref="ghostConnection"
-		v-show="enable"
-		:x1="x1" :y1="y1" :x2="x2" :y2="y2"
-		stroke="#0bb1f9"
-	/>
+<template lang="pug">
+	line( ref='ghostConnection'
+		v-show='enable'
+		:x1='x1' :y1='y1' :x2='x2' :y2='y2'
+		stroke='#0bb1f9'
+	)
 </template>
 
 <script>
