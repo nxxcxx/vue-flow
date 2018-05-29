@@ -15,12 +15,15 @@ export default {
 		return {
 			active: false,
 			menu: {
-				'create node': null,
 				'add input': null,
 				'add output': null,
-				'rename': null,
+				'copy node': null,
+				'paste node': null,
+				'create node': null,
 				'delete io': null,
 				'delete node': null,
+				'rename': null,
+				'view xpack': null,
 			}
 		}
 	},
@@ -50,7 +53,7 @@ export default {
 			} else if ( overflowY ) {
 				ctxm.css( 'transform', 'translate( 0px, -100% )' )
 			} else {
-				ctxm.css( 'transform', 'translate( 0, 0 )' )
+				ctxm.css( 'transform', 'translate( 0px, 0px )' )
 			}
 		} )
 		$( document ).on( 'click', ev => {
@@ -68,7 +71,7 @@ export default {
 		left: 0px
 		background: rgb( 10, 10, 10 )
 		padding: 2px
-		width: 100px
+		width: 80px
 		transform: translate( -100%, -100% )
 
 	.menuItem:hover

@@ -238,7 +238,6 @@ export default {
 		this.importGraph()
 	},
 	mounted() {
-
 		let resizingGrid = false
 		$( this.$refs.gridSeparator )
 		.on( 'mousedown', ev => {
@@ -258,7 +257,6 @@ export default {
 				$( window ).trigger( 'resize' )
 			}
 		} )
-
 		this.initTHREE()
 		this.$root.$on( 'node-selected', nodes => {
 			this.selectedNodes = nodes
