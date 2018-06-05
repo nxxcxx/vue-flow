@@ -1,12 +1,5 @@
 <template lang="pug">
 	div.viewport( ref='viewport' )
-		div( style='position: absolute; width: 100%; height: 15px; background: black; z-index: 10;' )
-			span( v-for='( node, idx ) in graphViewPath' @click='viewXPack( node.node )' style='cursor: default;' )
-				span( style='cursor: pointer;' ) {{ node.name }}
-				span {{ idx === graphViewPath.length - 1 ? '' : ' > ' }}
-			span.btn( @click='centerGraphInView' ) CENTER_VIEW
-			span.btn( @click='packSelectedNodes' ) PACK
-			span.btn( @click='unpackSelectedNode' ) UNPACK
 		div.nodeGraphRoot( ref='nodeGraphRoot' )
 			div.nodeGraphContainer( ref='nodeGraphContainer' )
 				svg.nodeContainerSvg
@@ -24,8 +17,10 @@
 					)
 		SelectionBox
 		ContextMenu
-		div( style='width: 200px; height: 100px; background: red; position: absolute; top: 25px; left: 10px; overflow: hidden;' )
-			Minimap( :graph='graphView' )
+		div(
+			style='position: absolute; border: 1px solid white; background: rgba(255, 255, 255, 0.5)'
+			:style='{ width: `${mmRect.w}px`, height: `${mmRect.h}px`, left: `${mmRect.x}px`, top: `${mmRect.y}px` }'
+		)
 </template>
 
 <script>
@@ -39,11 +34,10 @@ import ContextMenu from './ContextMenu.vue'
 import toposort from 'toposort'
 import { XPack, RouterNode } from './xpack.js'
 import nodeFactory from './NodeFactory.js'
-import Minimap from './Minimap.vue'
 
 export default {
-	name: 'NodeGraph',
-	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection, ContextMenu, Minimap },
+	name: 'Minimap',
+	components: { NodeModule, NodeConnection, SelectionBox, NodeGhostConnection, ContextMenu },
 	props: [ 'graph' ],
 	provide() {
 		return {
@@ -65,9 +59,34 @@ export default {
 				middleMouseHold: false,
 			},
 			enableSelectionBox: false,
+			mmRect: { w: 0, h: 0, x: 0, y: 0 }
+		}
+	},
+	watch: {
+		graph( graphView ) {
+			this.graphView = graphView
 		}
 	},
 	methods: {
+		computeMinimapViewRect() {
+			this.$nextTick( () => {
+				let pVp = $( this.$parent.$refs.viewport )
+				let pVpSize = { w: pVp.width(), h: pVp.height() }
+				let mVp = $( this.$refs.viewport )
+				let mVpSize = { w: mVp.width(), h: mVp.height() }
+				let pScaleF = this.$parent.vpd.zoomFactor
+				let mScaleF = this.vpd.zoomFactor
+				let ss = mScaleF / pScaleF
+				let pmat = this.$parent.getContainerMatrix()
+				let panX = -pmat[ 4 ]
+				let panY = -pmat[ 5 ]
+				this.mmRect.w = pVpSize.w * ss
+				this.mmRect.h = pVpSize.h * ss
+				this.mmRect.x = panX * ss
+				this.mmRect.y = panY * ss
+				console.log( this.mmRect )
+			} )
+		},
 		init() {
 			this.graphView = this.graph
 			this.graphViewPath = [ { name: 'Root', node: this.graph } ]
@@ -90,8 +109,14 @@ export default {
 				this.graph.nodes.push( n )
 			}
 
-			this.pan( 25, 25 )
-
+			this.centerGraphInView()
+			this.computeMinimapViewRect()
+			this.$parent.$EventBus.$on( 'vp-zoom', () => {
+				this.computeMinimapViewRect()
+			} )
+			this.$parent.$EventBus.$on( 'vp-pan', () => {
+				this.computeMinimapViewRect()
+			} )
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
@@ -118,7 +143,6 @@ export default {
 			let bx = dx + bgPos[ 0 ]
 			let by = dy + bgPos[ 1 ]
 			nRoot.css( 'background-position', `${bx}px ${by}px` )
-			this.$EventBus.$emit( 'vp-pan' )
 		},
 		zoom( anchor, delta ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
