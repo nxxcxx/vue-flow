@@ -17,8 +17,8 @@
 					)
 		SelectionBox
 		ContextMenu
-		div(
-			style='position: absolute; border: 1px solid white; background: rgba(255, 255, 255, 0.5)'
+		div( ref='minimapViewRect'
+			style='position: absolute; border: 1px solid white; background: rgba(255, 255, 255, 0.25)'
 			:style='{ width: `${mmRect.w}px`, height: `${mmRect.h}px`, left: `${mmRect.x}px`, top: `${mmRect.y}px` }'
 		)
 </template>
@@ -71,20 +71,17 @@ export default {
 		computeMinimapViewRect() {
 			this.$nextTick( () => {
 				let pVp = $( this.$parent.$refs.viewport )
-				let pVpSize = { w: pVp.width(), h: pVp.height() }
-				let mVp = $( this.$refs.viewport )
-				let mVpSize = { w: mVp.width(), h: mVp.height() }
-				let pScaleF = this.$parent.vpd.zoomFactor
-				let mScaleF = this.vpd.zoomFactor
-				let ss = mScaleF / pScaleF
-				let pmat = this.$parent.getContainerMatrix()
-				let panX = -pmat[ 4 ]
-				let panY = -pmat[ 5 ]
+				, pVpSize = { w: pVp.width(), h: pVp.height() }
+				, pScaleF = this.$parent.vpd.zoomFactor
+				, mScaleF = this.vpd.zoomFactor
+				, ss = mScaleF / pScaleF
+				, pmat = this.$parent.getContainerMatrix()
+				, panX = - pmat[ 4 ]
+				, panY = - pmat[ 5 ]
 				this.mmRect.w = pVpSize.w * ss
 				this.mmRect.h = pVpSize.h * ss
 				this.mmRect.x = panX * ss
 				this.mmRect.y = panY * ss
-				console.log( this.mmRect )
 			} )
 		},
 		init() {
@@ -117,6 +114,29 @@ export default {
 			this.$parent.$EventBus.$on( 'vp-pan', () => {
 				this.computeMinimapViewRect()
 			} )
+
+			let movingMinimapViewRect = false
+			let prevMouseMM = { x: 0, y: 0 }
+			$( this.$refs.minimapViewRect ).on( 'mousedown', ev => {
+				movingMinimapViewRect = true
+				prevMouseMM = { x: ev.clientX, y: ev.clientY }
+			} ).on( 'mouseup', ev => {
+				movingMinimapViewRect = false
+			} ).on( 'mousemove', ev => {
+				if ( !movingMinimapViewRect ) return
+				let dt = { x: ev.clientX - prevMouseMM.x, y: ev.clientY - prevMouseMM.y }
+				this.panMinimap( dt.x, dt.y )
+				prevMouseMM = { x: ev.clientX, y: ev.clientY }
+				let pScaleF = this.$parent.vpd.zoomFactor
+				, mScaleF = this.vpd.zoomFactor
+				, ss = mScaleF / pScaleF
+				let rectPos = { x: - this.mmRect.x / ss, y: - this.mmRect.y / ss }
+				this.$parent.setViewPosition( rectPos.x, rectPos.y )
+			} )
+		},
+		panMinimap( dx, dy ) {
+			this.mmRect.x += dx
+			this.mmRect.y += dy
 		},
 		getContainerMatrix() {
 			return $( this.$refs.nodeGraphContainer ).css( 'transform' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )

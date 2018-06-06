@@ -105,6 +105,12 @@ export default {
 				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.vpd.zoomFactor
 			}
 		},
+		setViewPosition( x, y ) {
+			let nCont = $( this.$refs.nodeGraphContainer )
+			, mat = this.getContainerMatrix()
+			, sf = mat[ 0 ]
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${x},${y})` )
+		},
 		pan( dx, dy ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
 			, mat = this.getContainerMatrix()
