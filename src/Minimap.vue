@@ -1,6 +1,6 @@
 <template lang="pug">
 	div.viewport( ref='viewport' )
-		div.nodeGraphRoot( ref='nodeGraphRoot' )
+		div.nodeGraphRoot( ref='nodeGraphRoot' style='background: black;' )
 			div.nodeGraphContainer( ref='nodeGraphContainer' )
 				svg.nodeContainerSvg
 					NodeGhostConnection
@@ -76,12 +76,13 @@ export default {
 				, mScaleF = this.vpd.zoomFactor
 				, ss = mScaleF / pScaleF
 				, pmat = this.$parent.getContainerMatrix()
+				, mmat = this.getContainerMatrix()
 				, panX = - pmat[ 4 ]
 				, panY = - pmat[ 5 ]
 				this.mmRect.w = pVpSize.w * ss
 				this.mmRect.h = pVpSize.h * ss
-				this.mmRect.x = panX * ss
-				this.mmRect.y = panY * ss
+				this.mmRect.x = panX * ss + mmat[ 4 ]
+				this.mmRect.y = panY * ss + mmat[ 5 ]
 			} )
 		},
 		init() {
@@ -99,12 +100,6 @@ export default {
 				}
 			}
 			rConnect( this.graph )
-
-			window.CREATE_NODE = name => {
-				let n = new nodeFactory.Node( name )
-				n.parent = this.graph
-				this.graph.nodes.push( n )
-			}
 
 			this.centerGraphInView()
 			this.computeMinimapViewRect()
@@ -133,6 +128,10 @@ export default {
 				let rectPos = { x: - this.mmRect.x / ss, y: - this.mmRect.y / ss }
 				this.$parent.setViewPosition( rectPos.x, rectPos.y )
 			} )
+			this.$parent.$on( 'update-minimap', () => {
+				this.centerGraphInView()
+			} )
+
 		},
 		panMinimap( dx, dy ) {
 			this.mmRect.x += dx
@@ -150,6 +149,13 @@ export default {
 				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.vpd.zoomFactor
 			}
 		},
+		setPan( x, y ) {
+			let nCont = $( this.$refs.nodeGraphContainer )
+			, mat = this.getContainerMatrix()
+			, sf = mat[ 0 ]
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${x},${y})` )
+			this.$EventBus.$emit( 'vp-pan' )
+		},
 		pan( dx, dy ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
 			, mat = this.getContainerMatrix()
@@ -158,11 +164,12 @@ export default {
 			, yy = mat[ 5 ] + dy
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
 			// pan bg
-			let nRoot = $( this.$refs.nodeGraphRoot )
-			let bgPos = nRoot.css( 'background-position' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
-			let bx = dx + bgPos[ 0 ]
-			let by = dy + bgPos[ 1 ]
-			nRoot.css( 'background-position', `${bx}px ${by}px` )
+			// let nRoot = $( this.$refs.nodeGraphRoot )
+			// let bgPos = nRoot.css( 'background-position' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
+			// let bx = dx + bgPos[ 0 ]
+			// let by = dy + bgPos[ 1 ]
+			// nRoot.css( 'background-position', `${bx}px ${by}px` )
+			this.$EventBus.$emit( 'vp-pan' )
 		},
 		zoom( anchor, delta ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
@@ -469,29 +476,17 @@ export default {
 			}
 		},
 		normalizeView( graph ) {
-			// normalize nodes position
 			let [ mx, my ] = [ Infinity, Infinity ]
 			graph.nodes.forEach( n => {
 				mx = Math.min( mx, n.position.x )
 				my = Math.min( my, n.position.y )
 			} )
-			let offset = 0
-			graph.nodes.forEach( n => {
-				this.$EventBus.$emit( 'update-node-position', {
-					node: n,
-					pos: { x: n.position.x - mx + offset, y: n.position.y - my + offset }
-				} )
-			} )
-			// normalize pan & zoom
 			let nCont = $( this.$refs.nodeGraphContainer )
-			nCont.css( 'transform', `matrix(1,0,0,1,0,0)` )
-			this.vpd.zoomFactor = 1.0
-			this.$EventBus.$emit( 'vp-zoom' )
-			$( this.$refs.nodeGraphRoot ).scrollLeft( 0 ).scrollTop( 0 )
+			nCont.css( 'transform', `matrix(1,0,0,1,${- mx},${- my})` )
+			this.setZoomFactor( 1.0 )
 		},
 		centerGraphInView() {
 			this.$nextTick( () => {
-				this.normalizeView( this.graphView )
 				let [ minX, maxX ] = [ Infinity, - Infinity ]
 				let [ minY, maxY ] = [ Infinity, - Infinity ]
 				this.graphView.nodes.forEach( n => {
@@ -502,10 +497,13 @@ export default {
 				} )
 				let gDim = { w: maxX - minX, h: maxY - minY }
 				let v = $( this.$refs.nodeGraphRoot )
-				let vDim = { w: v.width() * 0.95, h: v.height() * 0.95 }
-				let scaleFactor = Math.min( 1.0, Math.min( vDim.w / gDim.w, vDim.h / gDim.h ) )
+				let vDim = { w: v.width(), h: v.height() }
+				let scaleFactor = Math.min( 1.0, Math.min( vDim.w * 0.95 / gDim.w, vDim.h * 0.95 / gDim.h ) )
 				this.setZoomFactor( scaleFactor )
-				this.pan( 25 * scaleFactor, 25 * scaleFactor )
+				this.setPan( - minX * scaleFactor, - minY * scaleFactor )
+				let cx = ( vDim.w - gDim.w * scaleFactor ) * scaleFactor
+				let cy = ( vDim.h - gDim.h * scaleFactor ) * scaleFactor
+				this.pan( cx, cy )
 			} )
 		},
 	},

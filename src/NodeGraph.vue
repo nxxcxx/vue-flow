@@ -4,6 +4,7 @@
 			span( v-for='( node, idx ) in graphViewPath' @click='viewXPack( node.node )' style='cursor: default;' )
 				span( style='cursor: pointer;' ) {{ node.name }}
 				span {{ idx === graphViewPath.length - 1 ? '' : ' > ' }}
+			span.btn( @click='normalizeView( graphView )' ) NORM_VIEW
 			span.btn( @click='centerGraphInView' ) CENTER_VIEW
 			span.btn( @click='packSelectedNodes' ) PACK
 			span.btn( @click='unpackSelectedNode' ) UNPACK
@@ -24,7 +25,7 @@
 					)
 		SelectionBox
 		ContextMenu
-		div( style='width: 200px; height: 100px; background: red; position: absolute; top: 25px; left: 10px; overflow: hidden;' )
+		div( style='width: 200px; height: 100px; position: absolute; top: 25px; left: 10px; overflow: hidden;' )
 			Minimap( :graph='graphView' )
 </template>
 
@@ -111,6 +112,13 @@ export default {
 			, sf = mat[ 0 ]
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${x},${y})` )
 		},
+		setPan( x, y ) {
+			let nCont = $( this.$refs.nodeGraphContainer )
+			, mat = this.getContainerMatrix()
+			, sf = mat[ 0 ]
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${x},${y})` )
+			this.$EventBus.$emit( 'vp-pan' )
+		},
 		pan( dx, dy ) {
 			let nCont = $( this.$refs.nodeGraphContainer )
 			, mat = this.getContainerMatrix()
@@ -118,12 +126,6 @@ export default {
 			, xx = mat[ 4 ] + dx
 			, yy = mat[ 5 ] + dy
 			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
-			// pan bg
-			let nRoot = $( this.$refs.nodeGraphRoot )
-			let bgPos = nRoot.css( 'background-position' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
-			let bx = dx + bgPos[ 0 ]
-			let by = dy + bgPos[ 1 ]
-			nRoot.css( 'background-position', `${bx}px ${by}px` )
 			this.$EventBus.$emit( 'vp-pan' )
 		},
 		zoom( anchor, delta ) {
@@ -147,7 +149,7 @@ export default {
 			this.vpd.zoomFactor = sf
 			let mat = this.getContainerMatrix()
 			let nCont = $( this.$refs.nodeGraphContainer )
-			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${0},${0})` )
+			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${mat[ 4 ]},${mat[ 5 ]})` )
 			this.$EventBus.$emit( 'vp-zoom' )
 		},
 		clearSelectedNodes() {
@@ -431,29 +433,17 @@ export default {
 			}
 		},
 		normalizeView( graph ) {
-			// normalize nodes position
 			let [ mx, my ] = [ Infinity, Infinity ]
 			graph.nodes.forEach( n => {
 				mx = Math.min( mx, n.position.x )
 				my = Math.min( my, n.position.y )
 			} )
-			let offset = 0
-			graph.nodes.forEach( n => {
-				this.$EventBus.$emit( 'update-node-position', {
-					node: n,
-					pos: { x: n.position.x - mx + offset, y: n.position.y - my + offset }
-				} )
-			} )
-			// normalize pan & zoom
 			let nCont = $( this.$refs.nodeGraphContainer )
-			nCont.css( 'transform', `matrix(1,0,0,1,0,0)` )
-			this.vpd.zoomFactor = 1.0
-			this.$EventBus.$emit( 'vp-zoom' )
-			$( this.$refs.nodeGraphRoot ).scrollLeft( 0 ).scrollTop( 0 )
+			nCont.css( 'transform', `matrix(1,0,0,1,${- mx},${- my})` )
+			this.setZoomFactor( 1.0 )
 		},
 		centerGraphInView() {
 			this.$nextTick( () => {
-				this.normalizeView( this.graphView )
 				let [ minX, maxX ] = [ Infinity, - Infinity ]
 				let [ minY, maxY ] = [ Infinity, - Infinity ]
 				this.graphView.nodes.forEach( n => {
@@ -464,10 +454,13 @@ export default {
 				} )
 				let gDim = { w: maxX - minX, h: maxY - minY }
 				let v = $( this.$refs.nodeGraphRoot )
-				let vDim = { w: v.width() * 0.95, h: v.height() * 0.95 }
-				let scaleFactor = Math.min( 1.0, Math.min( vDim.w / gDim.w, vDim.h / gDim.h ) )
+				let vDim = { w: v.width(), h: v.height() }
+				let scaleFactor = Math.min( 1.0, Math.min( vDim.w * 0.95 / gDim.w, vDim.h * 0.95 / gDim.h ) )
 				this.setZoomFactor( scaleFactor )
-				this.pan( 25 * scaleFactor, 25 * scaleFactor )
+				this.setPan( - minX * scaleFactor, - minY * scaleFactor )
+				let cx = ( vDim.w - gDim.w * scaleFactor ) * scaleFactor
+				let cy = ( vDim.h - gDim.h * scaleFactor ) * scaleFactor
+				this.pan( cx, cy )
 			} )
 		},
 	},
@@ -603,6 +596,7 @@ export default {
 				this.$EventBus.$emit( 'ghost-connection-disable' )
 				this.$EventBus.$emit( 'selection-box-disable', ev )
 				this.$EventBus.$emit( 'io-label-dragging-disable')
+				this.$emit( 'update-minimap' )
 			} )
 			.on( 'wheel', ev => {
 				ev.preventDefault()
