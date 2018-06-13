@@ -9,7 +9,7 @@
 			span.btn( @click='packSelectedNodes' ) PACK
 			span.btn( @click='unpackSelectedNode' ) UNPACK
 		div.nodeGraphRoot( ref='nodeGraphRoot' )
-			div.nodeGraphContainer( ref='nodeGraphContainer' )
+			div.nodeGraphContainer( ref='nodeGraphContainer' :style='{ transform: matrixStr }' )
 				svg.nodeContainerSvg
 					NodeGhostConnection
 					NodeConnection(
@@ -66,6 +66,13 @@ export default {
 				middleMouseHold: false,
 			},
 			enableSelectionBox: false,
+			matrix: [ 1, 0, 0, 1, 0, 0 ]
+		}
+	},
+	computed: {
+		matrixStr() {
+			let m = this.matrix
+			return `matrix( ${m[0]}, ${m[1]}, ${m[2]}, ${m[3]}, ${m[4]}, ${m[5]} )`
 		}
 	},
 	methods: {
@@ -100,56 +107,41 @@ export default {
 		getMousePositionRelative( ev ) {
 			let vp = $( this.$refs.nodeGraphRoot )
 			, offset = vp.offset()
-			, mat = this.getContainerMatrix()
+			, mat = this.matrix
 			return {
 				x: ( ev.clientX - offset.left + vp.scrollLeft() - mat[ 4 ] ) / this.vpd.zoomFactor,
 				y: ( ev.clientY - offset.top + vp.scrollTop() - mat[ 5 ] ) / this.vpd.zoomFactor
 			}
 		},
 		setViewPosition( x, y ) {
-			let nCont = $( this.$refs.nodeGraphContainer )
-			, mat = this.getContainerMatrix()
-			, sf = mat[ 0 ]
-			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${x},${y})` )
+			this.$set( this.matrix, 4, x )
+			this.$set( this.matrix, 5, y )
 		},
 		setPan( x, y ) {
-			let nCont = $( this.$refs.nodeGraphContainer )
-			, mat = this.getContainerMatrix()
-			, sf = mat[ 0 ]
-			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${x},${y})` )
+			this.$set( this.matrix, 4, x )
+			this.$set( this.matrix, 5, y )
 			this.$EventBus.$emit( 'vp-pan' )
 		},
 		pan( dx, dy ) {
-			let nCont = $( this.$refs.nodeGraphContainer )
-			, mat = this.getContainerMatrix()
-			, sf = mat[ 0 ]
-			, xx = mat[ 4 ] + dx
-			, yy = mat[ 5 ] + dy
-			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
+			this.$set( this.matrix, 4, this.matrix[ 4 ] + dx )
+			this.$set( this.matrix, 5, this.matrix[ 5 ] + dy )
 			this.$EventBus.$emit( 'vp-pan' )
 		},
 		zoom( anchor, delta ) {
-			let nCont = $( this.$refs.nodeGraphContainer )
-			, mat = this.getContainerMatrix()
+			let mat = this.matrix
 			, dd = - Math.sign( delta ) * 0.1
 			, sf = Math.max( mat[ 0 ] * ( 1.0 + dd ), this.vpd.minZoom )
 			, sd = sf / mat[ 0 ]
 			, xx = sd * ( mat[ 4 ] - anchor.x ) + anchor.x
 			, yy = sd * ( mat[ 5 ] - anchor.y ) + anchor.y
-			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${xx},${yy})` )
+			this.matrix = [ sf, 0, 0, sf, xx, yy ]
 			this.vpd.zoomFactor = sf
 			this.$EventBus.$emit( 'vp-zoom' )
-			// auto resize bg
-			// let nRoot = $( this.$refs.nodeGraphRoot )
-			// let bgSize = nRoot.css( 'background-size' ).match( /[\d|\.|\+|-]+/g ).map( v => parseFloat( v ) )
-			// let s = sf * 50.0
-			// nRoot.css( 'background-size', `${s}px ${s}px` )
 		},
 		setZoomFactor( sf ) {
 			this.vpd.zoomFactor = sf
-			let mat = this.getContainerMatrix()
-			let nCont = $( this.$refs.nodeGraphContainer )
-			nCont.css( 'transform', `matrix(${sf},0,0,${sf},${mat[ 4 ]},${mat[ 5 ]})` )
+			this.$set( this.matrix, 0, sf )
+			this.$set( this.matrix, 3, sf )
 			this.$EventBus.$emit( 'vp-zoom' )
 		},
 		clearSelectedNodes() {
@@ -438,8 +430,7 @@ export default {
 				mx = Math.min( mx, n.position.x )
 				my = Math.min( my, n.position.y )
 			} )
-			let nCont = $( this.$refs.nodeGraphContainer )
-			nCont.css( 'transform', `matrix(1,0,0,1,${- mx},${- my})` )
+			this.matrix = [ 1, 0, 0, 1, - mx, - my ]
 			this.setZoomFactor( 1.0 )
 		},
 		centerGraphInView() {
@@ -643,7 +634,6 @@ export default {
 		user-select: none
 		cursor: default
 		transform-style: preserve-3d
-		// overflow: scroll
 		overflow: hidden
 		position: absolute
 		height: 100%

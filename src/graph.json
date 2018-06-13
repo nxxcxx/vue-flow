@@ -164,7 +164,7 @@
             "x": 50,
             "y": 60
           },
-          "_fnstr": "this.init = () => {\n  setTimeout( () => {\n    this.URL = 'https://soundcloud.com/chilledcow/to-be-alone-lofi-hiphop-mix-pt2'\n  }, 1000 )\n}\n\nthis.process = () => {\n  return {\n  \tURL: this.URL\n  }\n}\n\nthis.flush = () => {\n  delete this.URL\n}\n",
+          "_fnstr": "this.init = () => {\n  setTimeout( () => {\n    this.URL = 'https://soundcloud.com/chris11455/sets/glitch-a-synthwave-mix'\n  }, 1000 )\n}\n\nthis.process = () => {\n  return {\n  \tURL: this.URL\n  }\n}\n\nthis.flush = () => {\n  delete this.URL\n}\n",
           "input": [],
           "output": [
             {

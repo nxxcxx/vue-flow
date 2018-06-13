@@ -46,7 +46,7 @@ export default {
 				, off = port.offset()
 				, vp = $( this.$parent.$parent.$refs.nodeGraphRoot )
 				, vpOff = $( this.$parent.$parent.$refs.nodeGraphRoot ).offset()
-				, mat = this.$parent.$parent.getContainerMatrix()
+				, mat = this.$parent.$parent.matrix
 				this.io.position.x = ( off.left - vpOff.left + vp.scrollLeft() - mat[ 4 ] ) / mat[ 0 ] + woff
 				this.io.position.y = ( off.top - vpOff.top + vp.scrollTop() - mat[ 5 ] ) / mat[ 0 ] + hoff
 			} )
